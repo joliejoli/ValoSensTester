@@ -1,10 +1,14 @@
 extends Control
 
 # Phase 5.1 结果页：推荐灵敏度 + 性能指标聚合 + 置信区间 + 自动保存历史（5.4）
-# 指标聚合为静态函数，便于 headless 单测
+# Phase 5.2/5.3 详细报告弹窗：GP 曲线 + 命中率/学习曲线 + 对比表 + 建议 + 分享文本
 
 const HistoryStore := preload("res://scripts/history_store.gd")
 const TestMetrics := preload("res://scripts/test_metrics.gd")
+const Objective := preload("res://scripts/test_objective.gd")
+const TestPlan := preload("res://scripts/test_plan.gd")
+const Advice := preload("res://scripts/advice.gd")
+const Chart := preload("res://scripts/chart.gd")
 const SceneNav := preload("res://scripts/scene_nav.gd")
 
 @onready var rec_label: Label = %RecLabel
@@ -20,6 +24,15 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var metric_score: Label = %MetricScore
 @onready var metric_rounds: Label = %MetricRounds
 @onready var history_hint: Label = %HistoryHint
+@onready var report_popup: Control = %ReportPopup
+@onready var charts_box: VBoxContainer = %ChartsBox
+@onready var table_box: VBoxContainer = %TableBox
+@onready var advice_box: VBoxContainer = %AdviceBox
+@onready var share_hint: Label = %ShareHint
+
+var _share_metrics: Dictionary = {}
+var _share_problems: Array = []
+var _share_advice: Array = []
 
 func _ready() -> void:
 	var s: Dictionary = TestConfig.opt_summary
@@ -79,3 +92,164 @@ func _edpi_to_cm(edpi: float) -> float:
 	if edpi <= 0.0:
 		return 0.0
 	return 914.4 / (0.07 * edpi)
+
+# ---------- Phase 5.2/5.3 详细报告 ----------
+
+func _on_report_button_pressed() -> void:
+	_build_charts()
+	_build_table()
+	_build_advice()
+	report_popup.visible = true
+
+func _round_score(r: Dictionary) -> float:
+	return Objective.score(r)
+
+func _build_charts() -> void:
+	for c in charts_box.get_children():
+		c.queue_free()
+	var rounds: Array = TestConfig.round_results
+	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
+	var min_s := 1.0
+	var max_s := 0.0
+	for r in rounds:
+		min_s = minf(min_s, float(r.get("sens", 0.0)))
+		max_s = maxf(max_s, float(r.get("sens", 0.0)))
+	min_s = maxf(min_s - 0.05, 0.05)
+	max_s = minf(max_s + 0.05, 0.95)
+	var grid: Array = []
+	var x := min_s
+	while x <= max_s + 0.001:
+		grid.append(x)
+		x += 0.02
+	# 1) 灵敏度-综合评分：GP 后验均值 + 95% CI 带 + 实测散点
+	var c1 := Chart.new()
+	c1.title = "灵敏度-综合评分（GP 后验，阴影 = 95% CI）"
+	c1.y_limits = Vector2(0, 1)
+	c1.custom_minimum_size = Vector2(0, 190)
+	if not is_consistency and not rounds.is_empty():
+		var plan := TestPlan.new()
+		plan.begin(false, min_s, max_s, rounds.size())
+		for r in rounds:
+			plan.add_result(r)
+		var preds := plan.gp_predictions(grid)
+		var upper: Array = []
+		var lower: Array = []
+		for p in preds:
+			var sd := sqrt(maxf(p["variance"], 0.0))
+			upper.append(Vector2(p["x"], clampf(p["mean"] + 1.96 * sd, 0.0, 1.0)))
+			lower.append(Vector2(p["x"], clampf(p["mean"] - 1.96 * sd, 0.0, 1.0)))
+		c1.add_band(upper, lower, Color(1, 0.368627, 0.4), "95% CI")
+		var pts: Array = []
+		for r in rounds:
+			pts.append(Vector2(float(r.get("sens", 0.0)), _round_score(r)))
+		c1.add_series(pts, Color(0.95, 0.95, 0.95), "实测得分")
+	charts_box.add_child(c1)
+	# 2) 灵敏度-命中率
+	var c2 := Chart.new()
+	c2.title = "灵敏度-命中率"
+	c2.y_limits = Vector2(0, 1)
+	c2.custom_minimum_size = Vector2(0, 150)
+	var acc_pts: Array = []
+	for r in rounds:
+		var td := int(r.get("targets_done", 0))
+		acc_pts.append(Vector2(float(r.get("sens", 0.0)), float(int(r.get("hits", 0))) / float(td) if td > 0 else 0.0))
+	c2.add_series(acc_pts, Color(0.6, 0.85, 1), "命中率")
+	charts_box.add_child(c2)
+	# 3) 学习曲线（轮次-得分）
+	var c3 := Chart.new()
+	c3.title = "学习曲线（轮次-得分）"
+	c3.y_auto = true
+	c3.custom_minimum_size = Vector2(0, 150)
+	var lc: Array = []
+	for i in rounds.size():
+		lc.append(Vector2(i + 1, _round_score(rounds[i])))
+	c3.add_series(lc, Color(0.6, 0.95, 0.7), "得分")
+	charts_box.add_child(c3)
+
+func _build_table() -> void:
+	for c in table_box.get_children():
+		c.queue_free()
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 16)
+	for text in ["轮次", "灵敏度", "命中率", "中位耗时(s)", "修正(s)", "得分"]:
+		var lab := Label.new()
+		lab.text = text
+		lab.custom_minimum_size = Vector2(100, 0)
+		lab.modulate = Color(1, 0.27451, 0.333333)
+		header.add_child(lab)
+	table_box.add_child(header)
+	for r in TestConfig.round_results:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 16)
+		var td := int(r.get("targets_done", 0))
+		var cells := [
+			"%d" % int(r.get("round", 0)),
+			"%.2f" % float(r.get("sens", 0.0)),
+			"%d/%d" % [int(r.get("hits", 0)), td],
+			"%.2f" % TestMetrics.median(r.get("hit_times", [])),
+			"%.2f" % TestMetrics.median(r.get("correction_times", [])),
+			"%.2f" % _round_score(r),
+		]
+		for text in cells:
+			var lab := Label.new()
+			lab.text = text
+			lab.custom_minimum_size = Vector2(100, 0)
+			row.add_child(lab)
+		table_box.add_child(row)
+
+func _build_advice() -> void:
+	for c in advice_box.get_children():
+		c.queue_free()
+	var rounds: Array = TestConfig.round_results
+	var s: Dictionary = TestConfig.opt_summary
+	var metrics := TestMetrics.aggregate(rounds)
+	var problems := Advice.diagnose(metrics, rounds)
+	var advice := Advice.train_advice(problems)
+	if problems.is_empty():
+		var ok := Label.new()
+		ok.text = "未识别出明显问题：表现均衡，可在推荐灵敏度下继续巩固手感。"
+		ok.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		advice_box.add_child(ok)
+	else:
+		for p in problems:
+			var t := Label.new()
+			t.text = "• %s" % p["title"]
+			t.modulate = Color(1, 0.368627, 0.4)
+			t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			advice_box.add_child(t)
+			var d := Label.new()
+			d.text = p["detail"]
+			d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			d.modulate = Color(0.92549, 0.909804, 0.882353, 0.8)
+			advice_box.add_child(d)
+		advice_box.add_child(HSeparator.new())
+	for a in advice:
+		var lab := Label.new()
+		lab.text = "训练建议：%s" % a
+		lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		advice_box.add_child(lab)
+	var grip := Advice.grip_advice(float(s.get("best_sens", 0.0)))
+	var g := Label.new()
+	g.text = grip
+	g.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	g.modulate = Color(0.92549, 0.909804, 0.882353, 0.75)
+	advice_box.add_child(g)
+	_share_metrics = metrics
+	_share_problems = problems
+	_share_advice = advice
+	share_hint.text = ""
+
+func _on_share_pressed() -> void:
+	var s: Dictionary = TestConfig.opt_summary
+	var text := Advice.share_text(s, _share_metrics, _share_problems, _share_advice,
+		TestConfig.round_results, Advice.grip_advice(float(s.get("best_sens", 0.0))))
+	DisplayServer.clipboard_set(text)
+	share_hint.text = "已复制到剪贴板"
+
+func _on_report_tab_changed(index: int) -> void:
+	%PanelCharts.visible = index == 0
+	%PanelTable.visible = index == 1
+	%PanelAdvice.visible = index == 2
+
+func _on_close_report_pressed() -> void:
+	report_popup.visible = false

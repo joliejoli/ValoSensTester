@@ -59,6 +59,11 @@ custom_minimum_size = Vector2(140, 44)
 layout_mode = 2
 text = "导出 JSON"
 
+[node name="TrendButton" type="Button" parent="Toolbar"]
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+text = "趋势图"
+
 [node name="ClearAllButton" type="Button" parent="Toolbar"]
 custom_minimum_size = Vector2(140, 44)
 layout_mode = 2
@@ -175,6 +180,68 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "关闭"
 
+[node name="TrendPopup" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="TrendPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="TrendPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="TrendPopup/Center"]
+custom_minimum_size = Vector2(760, 560)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="TrendPopup/Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="TrendPopup/Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TrendTitle" type="Label" parent="TrendPopup/Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 22
+text = "历史趋势"
+horizontal_alignment = 1
+
+[node name="TrendScroll" type="ScrollContainer" parent="TrendPopup/Center/Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="TrendBox" type="VBoxContainer" parent="TrendPopup/Center/Card/Margin/VBox/TrendScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CloseTrend" type="Button" parent="TrendPopup/Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "关闭"
+
 [node name="BottomBar" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 12
@@ -196,5 +263,7 @@ script = ExtResource("1_back")
 
 [connection signal="item_selected" from="Toolbar/FilterOption" to="." method="_on_filter_changed"]
 [connection signal="pressed" from="Toolbar/ExportButton" to="." method="_on_export_pressed"]
+[connection signal="pressed" from="Toolbar/TrendButton" to="." method="_on_trend_pressed"]
 [connection signal="pressed" from="Toolbar/ClearAllButton" to="." method="_on_clear_all_pressed"]
 [connection signal="pressed" from="DetailPopup/Center/Card/Margin/VBox/CloseDetail" to="." method="_on_close_detail_pressed"]
+[connection signal="pressed" from="TrendPopup/Center/Card/Margin/VBox/CloseTrend" to="." method="_on_close_trend_pressed"]

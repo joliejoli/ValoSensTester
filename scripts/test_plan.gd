@@ -74,6 +74,14 @@ func best_estimate() -> Dictionary:
 	var rec: Dictionary = _bo.suggest(candidates, BayesOpt.MODE_EI, UCB_KAPPA)
 	return {"sens": rec["x"], "mean": rec["mean"], "variance": rec["variance"]}
 
+# GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]
+func gp_predictions(points: Array) -> Array:
+	var out: Array = []
+	for p in points:
+		var pred := _bo.predict(float(p))
+		out.append({"x": float(p), "mean": pred["mean"], "variance": pred["variance"]})
+	return out
+
 func _candidates(exclude_tested: bool = false) -> Array:
 	var out: Array[float] = []
 	var x := _sens_min

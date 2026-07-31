@@ -3,6 +3,7 @@ extends Control
 # Phase 5.4 历史记录：列表查看 / 类型筛选 / 详情弹窗 / 导出 JSON / 删除
 
 const HistoryStore := preload("res://scripts/history_store.gd")
+const Chart := preload("res://scripts/chart.gd")
 
 const TYPE_LABEL := {
 	"PSA": "灵敏度测试",
@@ -18,6 +19,8 @@ const TYPE_LABEL := {
 @onready var detail_meta: Label = %DetailMeta
 @onready var detail_metrics: Label = %DetailMetrics
 @onready var detail_rows: VBoxContainer = %DetailRows
+@onready var trend_popup: Control = %TrendPopup
+@onready var trend_box: VBoxContainer = %TrendBox
 
 var _records: Array = []
 var _filter := "ALL"
@@ -160,6 +163,36 @@ func _on_clear_all_pressed() -> void:
 	_records = []
 	_rebuild()
 
+# 趋势弹窗：灵敏度 / 得分随时间（按记录先后）变化（Phase 5.4）
+func _on_trend_pressed() -> void:
+	for c in trend_box.get_children():
+		c.queue_free()
+	var recs := _records.duplicate()
+	recs.sort_custom(func(a, b): return int(a["ts"]) < int(b["ts"]))
+	var sens_pts: Array = []
+	var score_pts: Array = []
+	var i := 0
+	for r in recs:
+		sens_pts.append(Vector2(i, float(r.get("sens", 0.0))))
+		score_pts.append(Vector2(i, float(r.get("score_mean", 0.0))))
+		i += 1
+	var c1 := Chart.new()
+	c1.title = "推荐灵敏度变化趋势（第 %d 次 ~ 第 %d 次）" % [1, maxf(recs.size(), 1)]
+	c1.y_auto = true
+	c1.custom_minimum_size = Vector2(0, 210)
+	c1.add_series(sens_pts, Color(1, 0.368627, 0.4), "灵敏度")
+	trend_box.add_child(c1)
+	var c2 := Chart.new()
+	c2.title = "综合得分变化趋势"
+	c2.y_auto = true
+	c2.custom_minimum_size = Vector2(0, 210)
+	c2.add_series(score_pts, Color(0.6, 0.95, 0.7), "得分")
+	trend_box.add_child(c2)
+	trend_popup.visible = true
+
+func _on_close_trend_pressed() -> void:
+	trend_popup.visible = false
+
 func _median(values: Array) -> float:
 	if values.is_empty():
 		return 0.0
@@ -175,3 +208,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		if detail_popup.visible:
 			detail_popup.visible = false
+		elif trend_popup.visible:
+			trend_popup.visible = false

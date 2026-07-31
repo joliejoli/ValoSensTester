@@ -27,6 +27,10 @@ var paused := false
 var current_sens := 40.0
 var deg_per_pixel := 0.0
 
+# FPS 相机：yaw 绕世界 Y 累积、pitch 绕局部 X 累积（标准做法，避免局部轴旋转的横滚漂移）
+var _yaw := 0.0
+var _pitch := 0.0
+
 var round_index := 0
 var targets_spawned := 0
 var targets_done := 0
@@ -42,6 +46,9 @@ var test_plan := TestPlan.new()
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	camera.fov = _vertical_fov(TestConfig.get_fov())
+	# YXZ 顺序：先绕世界 Y 偏航，再绕局部 X 俯仰（FPS 标准）
+	# YXZ 顺序（先绕世界 Y 偏航，再绕局部 X 俯仰，FPS 标准；枚举值 2 = YXZ）
+	camera.rotation_order = 2
 	shot_player.stream = Sfx.shot()
 	hit_player.stream = Sfx.hit()
 	miss_player.stream = Sfx.miss()
@@ -67,9 +74,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_shoot()
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		camera.rotate_y(deg_to_rad(-event.relative.x * deg_per_pixel))
-		camera.rotate_x(deg_to_rad(-event.relative.y * deg_per_pixel))
-		camera.rotation.x = clampf(camera.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+		_apply_mouse_motion(event.relative)
+
+# FPS 相机旋转：yaw 绕世界 Y（YXZ 顺序）累积，pitch 绕局部 X 累积并 clamp，全量赋值防漂移
+func _apply_mouse_motion(relative: Vector2) -> void:
+	_yaw += deg_to_rad(-relative.x * deg_per_pixel)
+	_pitch = clampf(_pitch + deg_to_rad(-relative.y * deg_per_pixel), deg_to_rad(-89.0), deg_to_rad(89.0))
+	camera.rotation = Vector3(_pitch, _yaw, 0.0)
 
 func _process(_delta: float) -> void:
 	if paused:
@@ -119,7 +130,7 @@ func _spawn_single_target() -> void:
 	var speed := 0.0
 	if moving:
 		speed = 1.8 if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
-	var pos := Vector3(randf_range(-5.0, 5.0), randf_range(-2.2, 2.2), -TestConfig.TARGET_DISTANCE)
+	var pos := Vector3(randf_range(-4.5, 4.5), randf_range(-2.0, 2.0), -TestConfig.TARGET_DISTANCE)
 	var tries := 0
 	while tries < 8:
 		var overlap := false
@@ -129,8 +140,8 @@ func _spawn_single_target() -> void:
 				break
 		if not overlap:
 			break
-		pos.x = randf_range(-5.0, 5.0)
-		pos.y = randf_range(-2.2, 2.2)
+		pos.x = randf_range(-4.5, 4.5)
+		pos.y = randf_range(-2.0, 2.0)
 		tries += 1
 	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT)
 	t.hit.connect(_on_target_hit)

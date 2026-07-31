@@ -6,7 +6,7 @@ signal expired(target: Node3D)
 var radius: float = 0.3
 var alive := true
 var move_speed := 0.0
-var move_bounds := Vector2(-5.0, 5.0)
+var move_bounds := Vector2(-4.5, 4.5)
 
 # 数据收集（由主控写入/读取）
 var shots_against := 0

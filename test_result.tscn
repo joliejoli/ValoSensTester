@@ -1,0 +1,84 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
+[ext_resource type="Script" path="res://scripts/nav_button.gd" id="2_nav"]
+[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
+
+[node name="TestResult" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0980392, 0.137255, 1)
+
+[node name="TitleBar" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 32
+text = "测试结果"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Separator" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 80.0
+offset_bottom = 82.0
+grow_horizontal = 2
+color = Color(1, 0.27451, 0.333333, 0.6)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Placeholder" type="Label" parent="Center"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 22
+text = "结果展示开发中（Phase 5 实现）"
+
+[node name="BottomBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="BackButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
+text = "返回主菜单"
+script = ExtResource("1_back")
+
+[node name="PrevButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
+text = "上一步"
+script = ExtResource("2_nav")
+target_scene = "res://test_shoot.tscn"

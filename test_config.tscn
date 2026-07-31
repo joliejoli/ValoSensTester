@@ -1,0 +1,225 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/test_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
+[ext_resource type="Script" path="res://scripts/nav_button.gd" id="3_nav"]
+[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="4_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start"]
+bg_color = Color(1, 0.27451, 0.333333, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.27451, 0.333333, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="TestConfig" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("4_theme")
+script = ExtResource("1_config")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0980392, 0.137255, 1)
+
+[node name="TitleBar" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 32
+text = "测试参数配置"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Separator" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 80.0
+offset_bottom = 82.0
+grow_horizontal = 2
+color = Color(1, 0.27451, 0.333333, 0.6)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SectionTitle" type="Label" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 20
+text = "测试参数"
+
+[node name="Grid" type="GridContainer" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 14
+columns = 2
+
+[node name="SensMinLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "灵敏度最小 (cm/360°)"
+vertical_alignment = 1
+
+[node name="SensMinSpin" type="SpinBox" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 200.0
+step = 0.5
+value = 20.0
+
+[node name="SensMaxLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "灵敏度最大 (cm/360°)"
+vertical_alignment = 1
+
+[node name="SensMaxSpin" type="SpinBox" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 200.0
+step = 0.5
+value = 80.0
+
+[node name="RoundsLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "测试轮数"
+vertical_alignment = 1
+
+[node name="RoundsSpin" type="SpinBox" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 20.0
+step = 1.0
+value = 3.0
+
+[node name="TargetTypeLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "目标类型"
+vertical_alignment = 1
+
+[node name="TargetTypeOption" type="OptionButton" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "静止目标"
+popup/item_1/text = "移动目标"
+
+[node name="TargetSizeLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "目标大小"
+vertical_alignment = 1
+
+[node name="TargetSizeOption" type="OptionButton" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "小"
+popup/item_1/text = "中"
+popup/item_2/text = "大"
+
+[node name="TestModeLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "测试模式"
+vertical_alignment = 1
+
+[node name="TestModeOption" type="OptionButton" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "标准模式"
+popup/item_1/text = "压力模式（多目标）"
+popup/item_2/text = "追踪模式（移动目标）"
+
+[node name="Hint" type="Label" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.45)
+theme_override_font_sizes/font_size = 14
+text = "参数将用于本次测试流程，可随时返回修改。"
+horizontal_alignment = 1
+
+[node name="BottomBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="BackButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
+text = "返回主菜单"
+script = ExtResource("2_back")
+
+[node name="PrevButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
+text = "上一步"
+script = ExtResource("3_nav")
+target_scene = "res://test_select.tscn"
+
+[node name="StartButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+text = "开始测试"
+
+[connection signal="pressed" from="BottomBar/StartButton" to="." method="_on_start_button_pressed"]

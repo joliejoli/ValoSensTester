@@ -8,9 +8,10 @@ const MIN_UI_SCALE := 0.5
 
 # 测试场景常量（Phase 3/4）
 # 每轮靶数：信度评估结论（8 靶噪声 SD 0.083 > 信号，提到 12 靶）
+# 目标存活时间：Phase 4.5 从 6s 缩短到 3s，恢复时间压力（超时=未命中，防止慢慢瞄虚高命中率）
 const TARGETS_PER_ROUND := 12
 const WARMUP_TARGETS := 5
-const TARGET_MAX_LIFETIME := 6.0
+const TARGET_MAX_LIFETIME := 3.0
 const TARGET_DISTANCE := 8.0
 
 enum TestType { PSA_BINARY, CONSISTENCY }

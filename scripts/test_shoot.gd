@@ -130,7 +130,9 @@ func _spawn_single_target() -> void:
 	var speed := 0.0
 	if moving:
 		speed = 1.8 if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
-	var pos := Vector3(randf_range(-4.5, 4.5), randf_range(-2.0, 2.0), -TestConfig.TARGET_DISTANCE)
+	# 大角度拉枪靶：35% 长距（角距 28°-46°）/ 65% 短距（角距 8°-18°），
+	# 让手臂大范围发力进入评分（任务构念偏差修复，Phase 4.5）
+	var pos := _spawn_position()
 	var tries := 0
 	while tries < 8:
 		var overlap := false
@@ -140,14 +142,35 @@ func _spawn_single_target() -> void:
 				break
 		if not overlap:
 			break
-		pos.x = randf_range(-4.5, 4.5)
-		pos.y = randf_range(-2.0, 2.0)
+		pos = _spawn_position()
 		tries += 1
 	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT)
 	t.hit.connect(_on_target_hit)
 	t.expired.connect(_on_target_expired)
 	active_targets.append(t)
 	targets_spawned += 1
+
+# 按当前相机朝向采样靶位：投影到 z=-8 平面（8m 视距恒定），y clamp ±2.0
+# 长距走水平大角度（垂直 FOV 有限，向下视野只有约 3°，水平才是大范围拉枪空间）
+func _spawn_position() -> Vector3:
+	var cam_pos := camera.global_position
+	var yaw_off := 0.0
+	var pitch_off := 0.0
+	if randf() < 0.35:
+		yaw_off = randf_range(28.0, 46.0) * (1.0 if randi() % 2 == 0 else -1.0)
+		pitch_off = randf_range(-12.0, 12.0)
+	else:
+		var dist := deg_to_rad(randf_range(8.0, 18.0))
+		var angle := randf() * TAU
+		yaw_off = rad_to_deg(sin(angle) * dist)
+		pitch_off = rad_to_deg(cos(angle) * dist)
+	var pos := Vector3(
+		cam_pos.x + tan(deg_to_rad(yaw_off)) * TestConfig.TARGET_DISTANCE,
+		cam_pos.y + tan(deg_to_rad(pitch_off)) * TestConfig.TARGET_DISTANCE,
+		cam_pos.z - TestConfig.TARGET_DISTANCE,
+	)
+	pos.y = clampf(pos.y, -2.0, 2.0)
+	return pos
 
 func _spawn_round_targets() -> void:
 	if TestConfig.test_mode == TestConfig.TestMode.PRESSURE:
@@ -298,13 +321,14 @@ func _build_opt_summary() -> Dictionary:
 		"is_consistency": false,
 	}
 
-# 模式标签：按最优灵敏度所在区间（800 DPI 参考：<0.30 约 >52cm/360，>0.60 约 <27cm/360）
+# 灵敏度倾向标签（Phase 4.5 软化：不再断言手腕/手臂发力方式，
+# 发力习惯因人而异，结果页注明基于本次测试任务）
 func _mode_label(sens: float) -> String:
 	if sens < 0.30:
-		return "低灵敏度 · 手臂流倾向"
+		return "本测试中表现偏向低灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
 	if sens > 0.60:
-		return "高灵敏度 · 手腕流倾向"
-	return "中灵敏度 · 混合流倾向"
+		return "本测试中表现偏向高灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
+	return "本测试中表现偏向中灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
 
 func _banner_wait() -> void:
 	await get_tree().create_timer(1.8).timeout
@@ -345,13 +369,14 @@ func _update_overshoot_detection() -> void:
 		t.was_aimed = aimed
 
 func _target_radius() -> float:
+	# Phase 4.5 缩小一档：小 0.12m(1.7°) / 中 0.20m(2.9°) / 大 0.40m(5.7°)，提高命中率区分度
 	match TestConfig.target_size:
 		TestConfig.TargetSize.SMALL:
-			return 0.14
+			return 0.12
 		TestConfig.TargetSize.LARGE:
-			return 0.56
+			return 0.40
 		_:
-			return 0.28
+			return 0.20
 
 func _vertical_fov(horizontal_fov: float) -> float:
 	var rect := get_viewport().get_visible_rect().size

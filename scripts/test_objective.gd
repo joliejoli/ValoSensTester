@@ -1,9 +1,10 @@
 extends RefCounted
-# 多维目标函数（Phase 4 信度/效度修订版）
+# 多维目标函数（Phase 4.5 修订版）
 # score = 0.5×accuracy + 0.3×speed + 0.2×consistency
-# accuracy   = hits/shots
-# speed      = 1/(1 + median(hit_times))，中位数抗离群
-# consistency= 1/(1 + MAD归一化 + 0.25×越靶率)，MAD 替代 std 抗离群，越靶反映微调失控
+# accuracy   = hits/targets_done（以靶为单位，超时靶=未命中，恢复时间压力下的区分度）
+# speed      = 1/(1 + median(t×sens))，t×sens 归一化剥离灵敏度物理优势
+#             （恒速模型下到达时间 t ∝ 角度/sens，乘 sens 后与灵敏度无关，衡量瞄准效率）
+# consistency= 1/(1 + MAD归一化 + 0.25×越靶率)，MAD/median 为比例，天然无量纲
 
 const WEIGHT_ACC := 0.5
 const WEIGHT_SPEED := 0.3
@@ -17,16 +18,17 @@ static func score(round_data: Dictionary) -> float:
 	return WEIGHT_ACC * acc + WEIGHT_SPEED * speed + WEIGHT_CONS * cons
 
 static func accuracy(round_data: Dictionary) -> float:
-	var shots := int(round_data.get("shots", 0))
-	if shots <= 0:
+	var targets := int(round_data.get("targets_done", 0))
+	if targets <= 0:
 		return 0.0
-	return float(int(round_data.get("hits", 0))) / float(shots)
+	return float(int(round_data.get("hits", 0))) / float(targets)
 
 static func speed_score(round_data: Dictionary) -> float:
 	var times: Array = round_data.get("hit_times", [])
 	if times.is_empty():
 		return 0.5
-	return 1.0 / (1.0 + median(times))
+	var sens := maxf(float(round_data.get("sens", 0.0)), 0.001)
+	return 1.0 / (1.0 + median(times) * sens)
 
 static func consistency_score(round_data: Dictionary) -> float:
 	var times: Array = round_data.get("hit_times", [])

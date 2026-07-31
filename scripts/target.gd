@@ -20,6 +20,8 @@ var _area: Area3D
 var _shape: CollisionShape3D
 var _move_dir := Vector3.RIGHT
 
+const TEXTURE_SIZE := 256
+
 func _ready() -> void:
 	_sprite = $Sprite3D
 	_area = $Area3D
@@ -40,7 +42,8 @@ func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := 
 func _apply_size() -> void:
 	if _sprite == null:
 		return
-	_sprite.pixel_size = radius * 2.0
+	# Sprite3D 显示尺寸 = 纹理像素数 × pixel_size，故 pixel_size = 直径 / 纹理尺寸
+	_sprite.pixel_size = radius * 2.0 / TEXTURE_SIZE
 	var sphere := SphereShape3D.new()
 	sphere.radius = radius
 	_shape.shape = sphere
@@ -76,12 +79,11 @@ func _process(delta: float) -> void:
 				_move_dir.x = -_move_dir.x
 
 static func make_target_texture() -> ImageTexture:
-	var size := 256
-	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var img := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	var half := float(size) / 2.0
-	for y in size:
-		for x in size:
+	var half := float(TEXTURE_SIZE) / 2.0
+	for y in TEXTURE_SIZE:
+		for x in TEXTURE_SIZE:
 			var d := Vector2(x + 0.5 - half, y + 0.5 - half).length() / half
 			var col := Color(0, 0, 0, 0)
 			if d <= 1.0:

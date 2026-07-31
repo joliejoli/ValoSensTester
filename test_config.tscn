@@ -144,7 +144,8 @@ layout_mode = 2
 min_value = 1.0
 max_value = 20.0
 step = 1.0
-value = 3.0
+value = 10.0
+hint_tooltip = "PSA 建议 ≥ 8 轮（粗扫 4 + 优化 6），以获得可靠推荐；Consistency 建议 3-5 轮"
 
 [node name="TargetTypeLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
 custom_minimum_size = Vector2(200, 0)

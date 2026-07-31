@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
 [ext_resource type="Script" path="res://scripts/nav_button.gd" id="2_nav"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
 [ext_resource type="Script" path="res://scripts/esc_nav.gd" id="5_esc"]
+[ext_resource type="Script" path="res://scripts/test_result.gd" id="6_result"]
 
 [node name="TestResult" type="Control"]
 layout_mode = 3
@@ -14,6 +15,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("3_theme")
+script = ExtResource("6_result")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -39,11 +41,64 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Placeholder" type="Label" parent="Center"]
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="RecTitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
+theme_override_font_sizes/font_size = 18
+text = "推荐灵敏度（游戏内）"
+horizontal_alignment = 1
+
+[node name="RecLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.368627, 0.4, 1)
+theme_override_font_sizes/font_size = 64
+text = "--"
+horizontal_alignment = 1
+
+[node name="ModeLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.85)
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.7)
+theme_override_font_sizes/font_size = 16
+text = ""
+horizontal_alignment = 1
+
+[node name="DpiLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
-theme_override_font_sizes/font_size = 22
-text = "结果展示开发中（Phase 5 实现）"
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
+[node name="SampleLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
+[node name="PhaseHint" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.35)
+theme_override_font_sizes/font_size = 13
+text = "完整数据可视化（曲线/热力图/对比表）将在 Phase 5 实现"
+horizontal_alignment = 1
 
 [node name="BottomBar" type="HBoxContainer" parent="."]
 layout_mode = 1

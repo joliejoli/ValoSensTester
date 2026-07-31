@@ -14,6 +14,7 @@ var first_shot_ms := -1
 var was_aimed := false
 var lifetime := 0.0
 var max_lifetime := 6.0
+var spawn_ms := 0
 
 var _sprite: Sprite3D
 var _area: Area3D
@@ -34,6 +35,7 @@ func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := 
 	move_speed = p_speed
 	_move_dir = p_dir.normalized()
 	global_position = p_position
+	spawn_ms = Time.get_ticks_msec()
 	max_lifetime = float(TestConfig.TARGET_MAX_LIFETIME)
 	if not is_node_ready():
 		await ready

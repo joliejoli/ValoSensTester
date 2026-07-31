@@ -3,6 +3,7 @@ extends Node3D
 const SceneNav := preload("res://scripts/scene_nav.gd")
 const TargetScene := preload("res://target.tscn")
 const Sfx := preload("res://scripts/sfx.gd")
+const TestPlan := preload("res://scripts/test_plan.gd")
 
 enum State { WARMUP, BANNER, ACTIVE, FINISHED }
 
@@ -36,6 +37,7 @@ var round_start_ms := 0
 
 var active_targets: Array[Node3D] = []
 var round_data: Dictionary = {}
+var test_plan := TestPlan.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -44,7 +46,13 @@ func _ready() -> void:
 	hit_player.stream = Sfx.hit()
 	miss_player.stream = Sfx.miss()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	_apply_sens(TestConfig.get_round_sens(0))
+	test_plan.begin(
+		TestConfig.test_type == TestConfig.TestType.CONSISTENCY,
+		TestConfig.sens_min,
+		TestConfig.sens_max,
+		TestConfig.rounds,
+	)
+	_apply_sens(test_plan.next_sens(0))
 	warmup_label.text = "热身阶段（数据不计入成绩）"
 	banner_label.visible = false
 	_spawn_single_target()
@@ -154,6 +162,7 @@ func _on_target_hit(t: Node3D) -> void:
 	var dt := (now_ms - round_start_ms) / 1000.0
 	if round_data.get("first_hit_time", 0.0) <= 0.0:
 		round_data["first_hit_time"] = dt
+	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
 	var sa: Variant = t.get("shots_against")
 	var fsm: Variant = t.get("first_shot_ms")
 	if sa != null and int(sa) > 1 and fsm != null and int(fsm) >= 0:
@@ -200,7 +209,7 @@ func _begin_test() -> void:
 
 func _start_round() -> void:
 	state = State.ACTIVE
-	current_sens = TestConfig.get_round_sens(round_index)
+	current_sens = test_plan.next_sens(round_index)
 	_apply_sens(current_sens)
 	round_data = {
 		"round": round_index + 1,
@@ -212,6 +221,7 @@ func _start_round() -> void:
 		"correction_time": 0.0,
 		"total_time_ms": 0,
 		"shot_timestamps": [],
+		"hit_times": [],
 	}
 	shot_count = 0
 	hit_count = 0
@@ -226,7 +236,9 @@ func _end_round() -> void:
 	state = State.BANNER
 	round_data["hits"] = hit_count
 	round_data["shots"] = shot_count
+	round_data["targets_done"] = targets_done
 	round_data["total_time_ms"] = Time.get_ticks_msec() - round_start_ms
+	test_plan.add_result(round_data)
 	TestConfig.round_results.append(round_data)
 	round_index += 1
 	if round_index >= TestConfig.rounds:
@@ -241,7 +253,47 @@ func _finish_test() -> void:
 	state = State.FINISHED
 	TestConfig.current_sens = current_sens
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	TestConfig.opt_summary = _build_opt_summary()
 	SceneNav.go("res://test_result.tscn", self)
+
+# 构建优化摘要（结果页 Phase 4 基础版展示；Phase 5 完整可视化）
+func _build_opt_summary() -> Dictionary:
+	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
+		var sens := current_sens
+		return {
+			"best_sens": sens,
+			"score_mean": 0.0,
+			"score_low": 0.0,
+			"score_high": 0.0,
+			"mode_label": "一致性测试（固定灵敏度）",
+			"dpi": TestConfig.get_dpi(),
+			"edpi": sens * TestConfig.get_dpi(),
+			"samples": TestConfig.round_results.size(),
+			"is_consistency": true,
+		}
+	var est: Dictionary = test_plan.best_estimate()
+	var sens := float(est["sens"])
+	var mean := float(est["mean"])
+	var var_sq := maxf(float(est["variance"]), 0.0)
+	return {
+		"best_sens": snappedf(sens, 0.01),
+		"score_mean": mean,
+		"score_low": mean - 1.96 * sqrt(var_sq),
+		"score_high": mean + 1.96 * sqrt(var_sq),
+		"mode_label": _mode_label(sens),
+		"dpi": TestConfig.get_dpi(),
+		"edpi": snappedf(sens * TestConfig.get_dpi(), 1.0),
+		"samples": TestConfig.round_results.size(),
+		"is_consistency": false,
+	}
+
+# 模式标签：按最优灵敏度所在区间（800 DPI 参考：<0.30 约 >52cm/360，>0.60 约 <27cm/360）
+func _mode_label(sens: float) -> String:
+	if sens < 0.30:
+		return "低灵敏度 · 手臂流倾向"
+	if sens > 0.60:
+		return "高灵敏度 · 手腕流倾向"
+	return "中灵敏度 · 混合流倾向"
 
 func _banner_wait() -> void:
 	await get_tree().create_timer(1.8).timeout

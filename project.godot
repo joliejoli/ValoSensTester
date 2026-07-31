@@ -23,6 +23,9 @@ TestConfig="*res://scripts/test_session.gd"
 
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/stretch/scale_mode="fractional"
+window/size/viewport_width=1280
+window/size/viewport_height=720
 
 [physics]
 

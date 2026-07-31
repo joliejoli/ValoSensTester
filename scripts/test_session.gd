@@ -25,12 +25,18 @@ var current_sens: float = 0.0
 var round_results: Array = []
 
 var ui_scale: float = 0.0  # 0 = 自动适配窗口，否则为固定缩放因子
+var display_mode: int = 0  # 0=窗口化 1=全屏 2=无边框全屏
 
 var _settings: Dictionary = {}
 
 func _ready() -> void:
 	load_settings()
 	get_tree().root.size_changed.connect(_on_window_size_changed)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F11:
+		get_viewport().set_input_as_handled()
+		toggle_fullscreen()
 
 func reset() -> void:
 	test_type = TestType.PSA_BINARY
@@ -52,6 +58,8 @@ func load_settings() -> void:
 	_settings["fov"] = config.get_value("game", "fov", 103.0)
 	_settings["volume"] = config.get_value("audio", "volume", 100.0)
 	ui_scale = config.get_value("display", "ui_scale", 0.0)
+	display_mode = config.get_value("display", "mode", 0)
+	apply_display_mode()
 	apply_ui_scale()
 
 func get_dpi() -> int:
@@ -71,3 +79,20 @@ func apply_ui_scale() -> void:
 func _on_window_size_changed() -> void:
 	if ui_scale <= 0.0:
 		apply_ui_scale()
+
+func apply_display_mode() -> void:
+	var win := get_window()
+	win.borderless = display_mode == 2
+	if display_mode == 0:
+		win.mode = Window.MODE_WINDOWED
+	else:
+		win.mode = Window.MODE_FULLSCREEN
+
+func toggle_fullscreen() -> void:
+	var win := get_window()
+	if win.mode == Window.MODE_WINDOWED:
+		win.borderless = false
+		win.mode = Window.MODE_FULLSCREEN
+	else:
+		win.borderless = false
+		win.mode = Window.MODE_WINDOWED

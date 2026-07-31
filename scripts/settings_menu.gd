@@ -7,6 +7,7 @@ const UI_SCALE_OPTIONS := [0.0, 1.0, 1.25, 1.5]
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var volume_value: Label = %VolumeValue
 @onready var ui_scale_option: OptionButton = %UiScaleOption
+@onready var display_mode_option: OptionButton = %DisplayModeOption
 
 func _ready() -> void:
 	load_settings()
@@ -14,6 +15,7 @@ func _ready() -> void:
 	fov_spin.value_changed.connect(_on_fov_changed)
 	volume_slider.value_changed.connect(_on_volume_changed)
 	ui_scale_option.item_selected.connect(_on_ui_scale_selected)
+	display_mode_option.item_selected.connect(_on_display_mode_selected)
 	apply_volume()
 
 func _on_dpi_changed(_value: float) -> void:
@@ -31,6 +33,11 @@ func _on_ui_scale_selected(index: int) -> void:
 	TestConfig.apply_ui_scale()
 	save_settings()
 
+func _on_display_mode_selected(index: int) -> void:
+	TestConfig.display_mode = index
+	TestConfig.apply_display_mode()
+	save_settings()
+
 func apply_volume() -> void:
 	volume_value.text = "%d%%" % int(volume_slider.value)
 	var bus := AudioServer.get_bus_index("Master")
@@ -42,6 +49,7 @@ func save_settings() -> void:
 	config.set_value("game", "fov", fov_spin.value)
 	config.set_value("audio", "volume", volume_slider.value)
 	config.set_value("display", "ui_scale", TestConfig.ui_scale)
+	config.set_value("display", "mode", TestConfig.display_mode)
 	config.save(TestConfig.SETTINGS_PATH)
 
 func load_settings() -> void:
@@ -53,3 +61,4 @@ func load_settings() -> void:
 	volume_slider.value = config.get_value("audio", "volume", volume_slider.value)
 	var idx := UI_SCALE_OPTIONS.find(TestConfig.ui_scale)
 	ui_scale_option.select(idx if idx >= 0 else 0)
+	display_mode_option.select(TestConfig.display_mode)

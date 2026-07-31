@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="3_top"]
+[ext_resource type="Script" path="res://scripts/history.gd" id="4_history"]
 
 [node name="History" type="Control"]
 layout_mode = 3
@@ -12,6 +13,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
+script = ExtResource("4_history")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -25,7 +27,77 @@ color = Color(0.0588235, 0.0980392, 0.137255, 1)
 [node name="TopBar" parent="." instance=ExtResource("3_top")]
 title_text = "历史记录"
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Toolbar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 100.0
+offset_bottom = 152.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="FilterOption" type="OptionButton" parent="Toolbar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "全部类型"
+popup/item_1/text = "灵敏度测试 (PSA)"
+popup/item_2/text = "一致性测试"
+
+[node name="CountLabel" type="Label" parent="Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
+theme_override_font_sizes/font_size = 14
+text = ""
+vertical_alignment = 1
+
+[node name="ExportButton" type="Button" parent="Toolbar"]
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+text = "导出 JSON"
+
+[node name="ClearAllButton" type="Button" parent="Toolbar"]
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+text = "清空记录"
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 160.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Scroll"]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 8
+
+[node name="ListBox" type="VBoxContainer" parent="Scroll/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EmptyLabel" type="Label" parent="Scroll/Margin/ListBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 20
+text = "暂无历史记录\n完成一次测试后会自动保存"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DetailPopup" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,24 +105,96 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Placeholder" type="Label" parent="Center"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
-theme_override_font_sizes/font_size = 22
-text = "暂无历史记录"
-
-[node name="BackButton" type="Button" parent="."]
+[node name="Dim" type="ColorRect" parent="DetailPopup"]
 layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="DetailPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="DetailPopup/Center"]
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="DetailPopup/Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="DetailPopup/Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DetailRec" type="Label" parent="DetailPopup/Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.368627, 0.4, 1)
+theme_override_font_sizes/font_size = 26
+text = ""
+horizontal_alignment = 1
+
+[node name="DetailMeta" type="Label" parent="DetailPopup/Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
+[node name="DetailMetrics" type="Label" parent="DetailPopup/Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.85)
+theme_override_font_sizes/font_size = 15
+text = ""
+horizontal_alignment = 1
+
+[node name="DetailScroll" type="ScrollContainer" parent="DetailPopup/Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+
+[node name="DetailRows" type="VBoxContainer" parent="DetailPopup/Center/Card/Margin/VBox/DetailScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CloseDetail" type="Button" parent="DetailPopup/Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "关闭"
+
+[node name="BottomBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -200.0
-offset_top = -84.0
-offset_right = -32.0
-offset_bottom = -32.0
-grow_horizontal = 0
+offset_top = -100.0
+offset_bottom = -28.0
+grow_horizontal = 2
 grow_vertical = 0
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="BackButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(180, 56)
+layout_mode = 2
 text = "返回主菜单"
 script = ExtResource("1_back")
+
+[connection signal="item_selected" from="Toolbar/FilterOption" to="." method="_on_filter_changed"]
+[connection signal="pressed" from="Toolbar/ExportButton" to="." method="_on_export_pressed"]
+[connection signal="pressed" from="Toolbar/ClearAllButton" to="." method="_on_clear_all_pressed"]
+[connection signal="pressed" from="DetailPopup/Center/Card/Margin/VBox/CloseDetail" to="." method="_on_close_detail_pressed"]

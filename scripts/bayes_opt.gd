@@ -40,6 +40,14 @@ func _train() -> void:
 		y_mean += y
 	if n > 0:
 		y_mean /= float(n)
+	# 信号方差按数据尺度自适应（复审 P1-1）：score 实测方差仅 ~0.03-0.05，
+	# 固定 1.0 会让置信区间被高估 4-5 倍（EI/UCB 过度探索、结果页 CI 过宽）
+	if n > 1:
+		var var_y := 0.0
+		for y in ys:
+			var d := y - y_mean
+			var_y += d * d
+		signal_variance = maxf(var_y / float(n - 1), 0.001)
 	var k: Array = []
 	k.resize(n)
 	for i in n:

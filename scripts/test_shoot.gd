@@ -154,6 +154,7 @@ func _spawn_single_target() -> void:
 # yaw_off/pitch_off 为相对相机朝向的角度，绕世界 Y 旋转到相机当前 yaw；
 # 不限制世界 y（相机 pitch 时世界 y 限制会破坏屏幕角距，相对 pitch 采样已 ≤18° 远小于半视场）
 # 长距走水平大角度（垂直 FOV 有限，向下视野只有约 3°，水平才是大范围拉枪空间）
+# 移动靶：yaw clamp ±15°（移动边界 ±4.5m≈29.4°，0.8m/s×3s=2.4m 位移需留余量；复审 P1-2）
 func _spawn_position() -> Vector3:
 	var cam_pos := camera.global_position
 	var yaw_off := 0.0
@@ -169,6 +170,10 @@ func _spawn_position() -> Vector3:
 		var angle := randf() * TAU
 		yaw_off = rad_to_deg(sin(angle) * dist)
 		pitch_off = rad_to_deg(cos(angle) * dist)
+	var moving: bool = TestConfig.target_type == TestConfig.TargetType.MOVING \
+		or TestConfig.test_mode == TestConfig.TestMode.TRACKING
+	if moving:
+		yaw_off = clampf(yaw_off, -15.0, 15.0)
 	var rel := Vector3(
 		tan(deg_to_rad(yaw_off)),
 		tan(deg_to_rad(pitch_off)),
@@ -206,10 +211,10 @@ func _on_target_hit(t: Node3D) -> void:
 	round_data["hit_angles"].append(float(t.angle_rad))
 	# 越靶统计（复审 P0-5）：命中前多余开火数（打空枪），无伪信号
 	round_data["overshoots"] = int(round_data.get("overshoots", 0)) + int(t.shots_against) - 1
-	var sa: Variant = t.get("shots_against")
 	var fsm: Variant = t.get("first_shot_ms")
-	if sa != null and int(sa) > 1 and fsm != null and int(fsm) >= 0:
-		round_data["correction_time"] = (now_ms - int(fsm)) / 1000.0
+	if fsm != null and int(fsm) >= 0:
+		# 修正时间：该靶首次开火 → 命中的耗时（复审 P1-3，数组化避免只存最后一靶）
+		round_data["correction_times"].append((now_ms - int(fsm)) / 1000.0)
 	targets_done += 1
 	_update_stats_ui()
 	_advance_round()
@@ -261,11 +266,11 @@ func _start_round() -> void:
 		"hits": 0,
 		"overshoots": 0,
 		"first_hit_time": 0.0,
-		"correction_time": 0.0,
 		"total_time_ms": 0,
 		"shot_timestamps": [],
 		"hit_times": [],
 		"hit_angles": [],
+		"correction_times": [],
 	}
 	shot_count = 0
 	hit_count = 0
@@ -319,11 +324,14 @@ func _build_opt_summary() -> Dictionary:
 	var sens := float(est["sens"])
 	var mean := float(est["mean"])
 	var var_sq := maxf(float(est["variance"]), 0.0)
+	# 得分 CI clamp 到合法区间（复审 P1-1）
+	var low := clampf(mean - 1.96 * sqrt(var_sq), 0.0, 1.0)
+	var high := clampf(mean + 1.96 * sqrt(var_sq), 0.0, 1.0)
 	return {
 		"best_sens": snappedf(sens, 0.01),
 		"score_mean": mean,
-		"score_low": mean - 1.96 * sqrt(var_sq),
-		"score_high": mean + 1.96 * sqrt(var_sq),
+		"score_low": low,
+		"score_high": high,
 		"mode_label": _mode_label(sens),
 		"dpi": TestConfig.get_dpi(),
 		"edpi": snappedf(sens * TestConfig.get_dpi(), 1.0),

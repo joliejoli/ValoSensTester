@@ -1,11 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
-[ext_resource type="Script" path="res://scripts/nav_button.gd" id="2_nav"]
-[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
-[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
-[ext_resource type="Script" path="res://scripts/esc_nav.gd" id="5_esc"]
-[ext_resource type="Script" path="res://scripts/test_result.gd" id="6_result"]
+[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="3_top"]
+[ext_resource type="Script" path="res://scripts/esc_nav.gd" id="4_esc"]
+[ext_resource type="Script" path="res://scripts/test_result.gd" id="5_result"]
 
 [node name="TestResult" type="Control"]
 layout_mode = 3
@@ -14,8 +13,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("3_theme")
-script = ExtResource("6_result")
+theme = ExtResource("2_theme")
+script = ExtResource("5_result")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -26,24 +25,27 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
-[node name="TopBar" parent="." instance=ExtResource("4_top")]
+[node name="TopBar" parent="." instance=ExtResource("3_top")]
 title_text = "测试结果"
 
 [node name="EscHandler" type="Node" parent="."]
-script = ExtResource("5_esc")
-esc_scene = "res://test_shoot.tscn"
+script = ExtResource("4_esc")
+esc_scene = "res://main.tscn"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 96.0
+offset_bottom = -120.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(860, 0)
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="RecTitle" type="Label" parent="Center/VBox"]
@@ -73,14 +75,22 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.7)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
+text = ""
+horizontal_alignment = 1
+
+[node name="CiLabel" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
+theme_override_font_sizes/font_size = 14
 text = ""
 horizontal_alignment = 1
 
 [node name="DpiLabel" type="Label" parent="Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.55)
 theme_override_font_sizes/font_size = 14
 text = ""
 horizontal_alignment = 1
@@ -89,15 +99,177 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = ""
 horizontal_alignment = 1
 
-[node name="PhaseHint" type="Label" parent="Center/VBox"]
+[node name="Spacer" type="Control" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.35)
+
+[node name="SectionTitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 16
+text = "本次测试表现（全轮聚合）"
+horizontal_alignment = 1
+
+[node name="Metrics" type="GridContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="Box1" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V1" type="VBoxContainer" parent="Center/VBox/Metrics/Box1"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K1" type="Label" parent="Center/VBox/Metrics/Box1/V1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "命中率（含超时=未命中）"
+horizontal_alignment = 1
+
+[node name="MetricAccuracy" type="Label" parent="Center/VBox/Metrics/Box1/V1"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="Box2" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V2" type="VBoxContainer" parent="Center/VBox/Metrics/Box2"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K2" type="Label" parent="Center/VBox/Metrics/Box2/V2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "中位命中耗时（秒）"
+horizontal_alignment = 1
+
+[node name="MetricHitTime" type="Label" parent="Center/VBox/Metrics/Box2/V2"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="Box3" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V3" type="VBoxContainer" parent="Center/VBox/Metrics/Box3"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K3" type="Label" parent="Center/VBox/Metrics/Box3/V3"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "中位修正耗时（秒）"
+horizontal_alignment = 1
+
+[node name="MetricCorrect" type="Label" parent="Center/VBox/Metrics/Box3/V3"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="Box4" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V4" type="VBoxContainer" parent="Center/VBox/Metrics/Box4"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K4" type="Label" parent="Center/VBox/Metrics/Box4/V4"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "多余开火次数（打空枪）"
+horizontal_alignment = 1
+
+[node name="MetricWasted" type="Label" parent="Center/VBox/Metrics/Box4/V4"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="Box5" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V5" type="VBoxContainer" parent="Center/VBox/Metrics/Box5"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K5" type="Label" parent="Center/VBox/Metrics/Box5/V5"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "综合评分（0-1）"
+horizontal_alignment = 1
+
+[node name="MetricScore" type="Label" parent="Center/VBox/Metrics/Box5/V5"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="Box6" type="PanelContainer" parent="Center/VBox/Metrics"]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+
+[node name="V6" type="VBoxContainer" parent="Center/VBox/Metrics/Box6"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="K6" type="Label" parent="Center/VBox/Metrics/Box6/V6"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "数据轮数"
+horizontal_alignment = 1
+
+[node name="MetricRounds" type="Label" parent="Center/VBox/Metrics/Box6/V6"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "--"
+horizontal_alignment = 1
+
+[node name="HistoryHint" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.4)
 theme_override_font_sizes/font_size = 13
-text = "完整数据可视化（曲线/热力图/对比表）将在 Phase 5 实现"
+text = ""
 horizontal_alignment = 1
 
 [node name="BottomBar" type="HBoxContainer" parent="."]
@@ -119,9 +291,9 @@ layout_mode = 2
 text = "返回主菜单"
 script = ExtResource("1_back")
 
-[node name="PrevButton" type="Button" parent="BottomBar"]
+[node name="HistoryButton" type="Button" parent="BottomBar"]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
-text = "上一步"
-script = ExtResource("2_nav")
-target_scene = "res://test_shoot.tscn"
+text = "查看历史记录"
+
+[connection signal="pressed" from="BottomBar/HistoryButton" to="." method="_on_history_button_pressed"]

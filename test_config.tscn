@@ -1,17 +1,42 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/test_config.gd" id="1_config"]
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
 [ext_resource type="Script" path="res://scripts/nav_button.gd" id="3_nav"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="4_theme"]
+[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="5_top"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_normal"]
+bg_color = Color(0.129412, 0.168627, 0.219608, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.27451, 0.333333, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_hover"]
 bg_color = Color(1, 0.27451, 0.333333, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.27451, 0.333333, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_pressed"]
+bg_color = Color(0.705882, 0.156863, 0.207843, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.705882, 0.156863, 0.207843, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -36,26 +61,8 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
-[node name="TitleBar" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 80.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
-theme_override_font_sizes/font_size = 32
-text = "测试参数配置"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Separator" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 82.0
-grow_horizontal = 2
-color = Color(1, 0.27451, 0.333333, 0.6)
+[node name="TopBar" parent="." instance=ExtResource("5_top")]
+title_text = "测试参数配置"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -93,6 +100,7 @@ theme_override_constants/v_separation = 14
 columns = 2
 
 [node name="SensMinLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "灵敏度最小 (cm/360°)"
@@ -108,6 +116,7 @@ step = 0.5
 value = 20.0
 
 [node name="SensMaxLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "灵敏度最大 (cm/360°)"
@@ -181,6 +190,15 @@ popup/item_0/text = "标准模式"
 popup/item_1/text = "压力模式（多目标）"
 popup/item_2/text = "追踪模式（移动目标）"
 
+[node name="ErrorLabel" type="Label" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.368627, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "最小灵敏度必须小于最大灵敏度"
+horizontal_alignment = 1
+
 [node name="Hint" type="Label" parent="Center/Card/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.45)
@@ -217,9 +235,9 @@ target_scene = "res://test_select.tscn"
 [node name="StartButton" type="Button" parent="BottomBar"]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_start")
-theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
 text = "开始测试"
 
 [connection signal="pressed" from="BottomBar/StartButton" to="." method="_on_start_button_pressed"]

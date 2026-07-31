@@ -1,16 +1,19 @@
 extends Control
 
+const SceneNav := preload("res://scripts/scene_nav.gd")
+
 func _on_test_select_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://test_select.tscn")
+	TestConfig.reset()
+	SceneNav.go("res://test_select.tscn", self)
 
 func _on_history_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://history.tscn")
+	SceneNav.go("res://history.tscn", self)
 
 func _on_settings_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://settings.tscn")
+	SceneNav.go("res://settings.tscn", self)
 
 func _on_about_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://about.tscn")
+	SceneNav.go("res://about.tscn", self)
 
 func _on_quit_button_pressed() -> void:
 	get_tree().quit()

@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/settings_menu.gd" id="1_settings"]
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
+[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
 
 [node name="Settings" type="Control"]
 layout_mode = 3
@@ -23,26 +24,8 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
-[node name="TitleBar" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 80.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
-theme_override_font_sizes/font_size = 32
-text = "设置"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Separator" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 82.0
-grow_horizontal = 2
-color = Color(1, 0.27451, 0.333333, 0.6)
+[node name="TopBar" parent="." instance=ExtResource("4_top")]
+title_text = "设置"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1

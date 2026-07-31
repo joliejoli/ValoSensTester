@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/test_select.gd" id="1_select"]
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
+[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_type"]
 
@@ -25,26 +26,8 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
-[node name="TitleBar" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 80.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
-theme_override_font_sizes/font_size = 32
-text = "测试选择"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Separator" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 82.0
-grow_horizontal = 2
-color = Color(1, 0.27451, 0.333333, 0.6)
+[node name="TopBar" parent="." instance=ExtResource("4_top")]
+title_text = "测试选择"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -99,11 +82,64 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "查看测试说明"
 
-[node name="InfoDialog" type="AcceptDialog" parent="."]
+[node name="Popup" type="Control" parent="."]
 unique_name_in_owner = true
-title = "测试说明"
-dialog_text = "二分法 (PSA)：通过多轮测试不断缩小灵敏度范围，快速逼近最适合你的灵敏度。\n\nConsistency 测试：在固定灵敏度下重复多轮测试，评估你的瞄准稳定性与一致性。"
-ok_button_text = "知道了"
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Popup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="Popup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogCard" type="PanelContainer" parent="Popup/Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Popup/Center/DialogCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="Popup/Center/DialogCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="DialogTitle" type="Label" parent="Popup/Center/DialogCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 24
+text = "测试说明"
+horizontal_alignment = 1
+
+[node name="DialogText" type="Label" parent="Popup/Center/DialogCard/Margin/VBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "二分法 (PSA)：通过多轮测试不断缩小灵敏度范围，快速逼近最适合你的灵敏度。\n\nConsistency 测试：在固定灵敏度下重复多轮测试，评估你的瞄准稳定性与一致性。"
+
+[node name="DialogOk" type="Button" parent="Popup/Center/DialogCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "知道了"
 
 [node name="BottomBar" type="HBoxContainer" parent="."]
 layout_mode = 1
@@ -131,3 +167,4 @@ text = "开始测试"
 
 [connection signal="pressed" from="Center/Card/Margin/VBox/InfoButton" to="." method="_on_info_button_pressed"]
 [connection signal="pressed" from="BottomBar/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="Popup/Center/DialogCard/Margin/VBox/DialogOk" to="." method="_on_dialog_ok_pressed"]

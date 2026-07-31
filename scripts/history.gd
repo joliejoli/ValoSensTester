@@ -41,7 +41,7 @@ func _rebuild() -> void:
 func _make_row(rec: Dictionary) -> Control:
 	var row := PanelContainer.new()
 	var hbox := HBoxContainer.new()
-	hbox.theme_override_constants/separation = 12
+	hbox.add_theme_constant_override("separation", 12)
 	row.add_child(hbox)
 	var date := Label.new()
 	date.text = HistoryStore.format_date(int(rec.get("ts", 0)))
@@ -107,7 +107,7 @@ func _show_detail(rec: Dictionary) -> void:
 		child.queue_free()
 	var rounds: Array = rec.get("round_results", [])
 	var header := HBoxContainer.new()
-	header.theme_override_constants/separation = 16
+	header.add_theme_constant_override("separation", 16)
 	for text in ["轮次", "灵敏度", "命中率", "命中耗时(s)", "修正(s)", "多余开火"]:
 		var lab := Label.new()
 		lab.text = text
@@ -117,7 +117,7 @@ func _show_detail(rec: Dictionary) -> void:
 	detail_rows.add_child(header)
 	for r in rounds:
 		var row := HBoxContainer.new()
-		row.theme_override_constants/separation = 16
+		row.add_theme_constant_override("separation", 16)
 		var targets := int(r.get("targets_done", 0))
 		var hit_times: Array = r.get("hit_times", [])
 		var corrections: Array = r.get("correction_times", [])

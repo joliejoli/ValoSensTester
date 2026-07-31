@@ -17,9 +17,12 @@ enum TargetType { STATIC, MOVING }
 enum TargetSize { SMALL, MEDIUM, LARGE }
 enum TestMode { STANDARD, PRESSURE, TRACKING }
 
+# 灵敏度使用无畏契约游戏内灵敏度值（如 0.35），非 cm/360°
+# VALORANT yaw = 0.07°/count，每 count 旋转 = 0.07 × 灵敏度 度
+# 参考换算（800 DPI）：0.35 ≈ 46.6 cm/360，0.10 ≈ 163 cm/360，0.90 ≈ 18 cm/360
 var test_type: int = TestType.PSA_BINARY
-var sens_min: float = 20.0
-var sens_max: float = 80.0
+var sens_min: float = 0.10
+var sens_max: float = 0.90
 var rounds: int = 3
 var target_type: int = TargetType.STATIC
 var target_size: int = TargetSize.MEDIUM
@@ -46,8 +49,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func reset() -> void:
 	test_type = TestType.PSA_BINARY
-	sens_min = 20.0
-	sens_max = 80.0
+	sens_min = 0.10
+	sens_max = 0.90
 	rounds = 3
 	target_type = TargetType.STATIC
 	target_size = TargetSize.MEDIUM

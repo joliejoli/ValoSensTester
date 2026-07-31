@@ -255,9 +255,9 @@ func _show_banner(text: String) -> void:
 
 func _apply_sens(sens: float) -> void:
 	current_sens = sens
-	var dpi: float = TestConfig.get_dpi()
-	deg_per_pixel = 2.54 / dpi * 360.0 / sens
-	sens_label.text = "%.1f cm/360°" % sens
+	# VALORANT yaw = 0.07°/count，每 count 鼠标移动旋转 0.07 × 灵敏度 度
+	deg_per_pixel = 0.07 * sens
+	sens_label.text = "灵敏度 %.2f" % sens
 
 func _update_hud() -> void:
 	round_label.text = "第 %d/%d 轮" % [round_index + 1, TestConfig.rounds]

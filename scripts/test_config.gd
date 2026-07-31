@@ -19,7 +19,7 @@ func _ready() -> void:
 	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
 		%SensMaxLabel.visible = false
 		%SensMaxSpin.visible = false
-		%SensMinLabel.text = "灵敏度 (cm/360°)"
+		%SensMinLabel.text = "灵敏度（游戏内）"
 	sens_min_spin.value_changed.connect(_on_sens_changed)
 	sens_max_spin.value_changed.connect(_on_sens_changed)
 
@@ -35,7 +35,7 @@ func _on_start_button_pressed() -> void:
 	TestConfig.test_mode = test_mode_option.selected
 	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
 		TestConfig.sens_max = sens_min_spin.value
-	if TestConfig.sens_min >= TestConfig.sens_max:
+	elif TestConfig.sens_min >= TestConfig.sens_max:
 		%ErrorLabel.visible = true
 		return
 	SceneNav.go("res://test_shoot.tscn", self)

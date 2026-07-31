@@ -11,10 +11,11 @@ var move_bounds := Vector2(-4.5, 4.5)
 # 数据收集（由主控写入/读取）
 var shots_against := 0
 var first_shot_ms := -1
-var was_aimed := false
 var lifetime := 0.0
 var max_lifetime := 6.0
 var spawn_ms := 0
+# 生成时相对相机初始朝向的角距（弧度），speed 归一化分母（Phase 4.5 复审 P0-3）
+var angle_rad := 0.0
 
 var _sprite: Sprite3D
 var _area: Area3D
@@ -30,10 +31,11 @@ func _ready() -> void:
 	_sprite.texture = make_target_texture()
 	_apply_size()
 
-func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := Vector3.RIGHT) -> void:
+func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := Vector3.RIGHT, p_angle_rad: float = 0.0) -> void:
 	radius = p_radius
 	move_speed = p_speed
 	_move_dir = p_dir.normalized()
+	angle_rad = p_angle_rad
 	global_position = p_position
 	spawn_ms = Time.get_ticks_msec()
 	max_lifetime = float(TestConfig.TARGET_MAX_LIFETIME)

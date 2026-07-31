@@ -87,7 +87,6 @@ func _process(_delta: float) -> void:
 		return
 	if state == State.ACTIVE:
 		timer_label.text = "%.1fs" % ((Time.get_ticks_msec() - round_start_ms) / 1000.0)
-		_update_overshoot_detection()
 
 func _shoot() -> void:
 	shot_player.play()
@@ -130,8 +129,8 @@ func _spawn_single_target() -> void:
 	var speed := 0.0
 	if moving:
 		speed = 1.8 if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
-	# 大角度拉枪靶：35% 长距（角距 28°-46°）/ 65% 短距（角距 8°-18°），
-	# 让手臂大范围发力进入评分（任务构念偏差修复，Phase 4.5）
+	# 大角度拉枪靶：35% 长距 / 65% 短距（角距 8°-18°），
+	# 长距上限与 sens_min 联动保证低敏 3s 超时内物理可达（复审 P0-4）
 	var pos := _spawn_position()
 	var tries := 0
 	while tries < 8:
@@ -144,33 +143,40 @@ func _spawn_single_target() -> void:
 			break
 		pos = _spawn_position()
 		tries += 1
-	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT)
+	var angle := acos(clampf(-(pos - camera.global_position).normalized().z, -1.0, 1.0))
+	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT, angle)
 	t.hit.connect(_on_target_hit)
 	t.expired.connect(_on_target_expired)
 	active_targets.append(t)
 	targets_spawned += 1
 
-# 按当前相机朝向采样靶位：投影到 z=-8 平面（8m 视距恒定），y clamp ±2.0
+# 按当前相机朝向采样靶位（复审 P0-1/P0-2）：
+# yaw_off/pitch_off 为相对相机朝向的角度，绕世界 Y 旋转到相机当前 yaw；
+# 不限制世界 y（相机 pitch 时世界 y 限制会破坏屏幕角距，相对 pitch 采样已 ≤18° 远小于半视场）
 # 长距走水平大角度（垂直 FOV 有限，向下视野只有约 3°，水平才是大范围拉枪空间）
 func _spawn_position() -> Vector3:
 	var cam_pos := camera.global_position
 	var yaw_off := 0.0
 	var pitch_off := 0.0
 	if randf() < 0.35:
-		yaw_off = randf_range(28.0, 46.0) * (1.0 if randi() % 2 == 0 else -1.0)
+		var t_low := clampf((TestConfig.sens_min - 0.10) / 0.30, 0.0, 1.0)
+		var long_lo := lerpf(20.0, 28.0, t_low)
+		var long_hi := lerpf(22.0, 46.0, t_low)
+		yaw_off = randf_range(long_lo, long_hi) * (1.0 if randi() % 2 == 0 else -1.0)
 		pitch_off = randf_range(-12.0, 12.0)
 	else:
 		var dist := deg_to_rad(randf_range(8.0, 18.0))
 		var angle := randf() * TAU
 		yaw_off = rad_to_deg(sin(angle) * dist)
 		pitch_off = rad_to_deg(cos(angle) * dist)
-	var pos := Vector3(
-		cam_pos.x + tan(deg_to_rad(yaw_off)) * TestConfig.TARGET_DISTANCE,
-		cam_pos.y + tan(deg_to_rad(pitch_off)) * TestConfig.TARGET_DISTANCE,
-		cam_pos.z - TestConfig.TARGET_DISTANCE,
-	)
-	pos.y = clampf(pos.y, -2.0, 2.0)
-	return pos
+	var rel := Vector3(
+		tan(deg_to_rad(yaw_off)),
+		tan(deg_to_rad(pitch_off)),
+		-1.0,
+	) * TestConfig.TARGET_DISTANCE
+	# 相机变换 = 绕世界 Y 偏航 × 绕局部 X 俯仰（YXZ），与 _apply_mouse_motion 一致
+	var cam_basis := Basis(Vector3.UP, _yaw) * Basis(Vector3.RIGHT, _pitch)
+	return cam_pos + cam_basis * rel
 
 func _spawn_round_targets() -> void:
 	if TestConfig.test_mode == TestConfig.TestMode.PRESSURE:
@@ -197,6 +203,9 @@ func _on_target_hit(t: Node3D) -> void:
 	if round_data.get("first_hit_time", 0.0) <= 0.0:
 		round_data["first_hit_time"] = dt
 	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
+	round_data["hit_angles"].append(float(t.angle_rad))
+	# 越靶统计（复审 P0-5）：命中前多余开火数（打空枪），无伪信号
+	round_data["overshoots"] = int(round_data.get("overshoots", 0)) + int(t.shots_against) - 1
 	var sa: Variant = t.get("shots_against")
 	var fsm: Variant = t.get("first_shot_ms")
 	if sa != null and int(sa) > 1 and fsm != null and int(fsm) >= 0:
@@ -256,6 +265,7 @@ func _start_round() -> void:
 		"total_time_ms": 0,
 		"shot_timestamps": [],
 		"hit_times": [],
+		"hit_angles": [],
 	}
 	shot_count = 0
 	hit_count = 0
@@ -352,21 +362,6 @@ func _update_hud() -> void:
 
 func _update_stats_ui() -> void:
 	stats_label.text = "命中 %d/%d" % [hit_count, shot_count]
-
-func _update_overshoot_detection() -> void:
-	var aimed_target: Node3D = null
-	var ray := _cast_ray()
-	if not ray.is_empty():
-		var col: Object = ray["collider"]
-		if col is Area3D:
-			var p: Node = col.get_parent()
-			if p is Node3D and p.get("alive") == true:
-				aimed_target = p
-	for t in active_targets:
-		var aimed := t == aimed_target
-		if aimed and not t.was_aimed:
-			round_data["overshoots"] = int(round_data.get("overshoots", 0)) + 1
-		t.was_aimed = aimed
 
 func _target_radius() -> float:
 	# Phase 4.5 缩小一档：小 0.12m(1.7°) / 中 0.20m(2.9°) / 大 0.40m(5.7°)，提高命中率区分度

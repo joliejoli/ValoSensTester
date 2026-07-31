@@ -1,79 +1,253 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=10 format=3]
 
-[ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
-[ext_resource type="Script" path="res://scripts/nav_button.gd" id="2_nav"]
-[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
-[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
-[ext_resource type="Script" path="res://scripts/esc_nav.gd" id="5_esc"]
+[ext_resource type="Script" path="res://scripts/test_shoot.gd" id="1_shoot"]
+[ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/crosshair.gd" id="3_crosshair"]
 
-[node name="TestShoot" type="Control"]
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.0431373, 0.0705882, 0.1, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.65, 0.65, 0.7, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="StandardMaterial3D" id="mat_ground"]
+albedo_color = Color(0.1, 0.137255, 0.188235, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="mat_wall"]
+albedo_color = Color(0.0666667, 0.0941176, 0.129412, 1)
+roughness = 1.0
+
+[sub_resource type="PlaneMesh" id="mesh_ground"]
+size = Vector2(80, 80)
+
+[sub_resource type="BoxMesh" id="mesh_wall_back"]
+size = Vector3(30, 10, 1)
+
+[sub_resource type="BoxMesh" id="mesh_wall_side"]
+size = Vector3(1, 10, 30)
+
+[node name="TestShoot" type="Node3D"]
+script = ExtResource("1_shoot")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.766044, 0.409576, -0.495822, 0, 0.771252, 0.636563, 0.642788, -0.487565, 0.59036, 0, 12, 0)
+light_energy = 1.1
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("mesh_ground")
+surface_material_override/0 = SubResource("mat_ground")
+
+[node name="BackWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -18)
+mesh = SubResource("mesh_wall_back")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="LeftWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 5, -9)
+mesh = SubResource("mesh_wall_side")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="RightWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 5, -9)
+mesh = SubResource("mesh_wall_side")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="Camera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+current = true
+
+[node name="TargetRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Crosshair" type="Control" parent="UI"]
+unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("3_theme")
+mouse_filter = 2
+script = ExtResource("3_crosshair")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="WarmupLabel" type="Label" parent="UI"]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -140.0
+offset_right = 200.0
+offset_bottom = -108.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0588235, 0.0980392, 0.137255, 1)
-
-[node name="TopBar" parent="." instance=ExtResource("4_top")]
-title_text = "射击测试"
-
-[node name="EscHandler" type="Node" parent="."]
-script = ExtResource("5_esc")
-esc_scene = "res://test_config.tscn"
-
-[node name="Center" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Placeholder" type="Label" parent="Center"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme = ExtResource("2_theme")
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 22
-text = "射击场景开发中（Phase 3 实现）"
+text = "热身阶段（数据不计入成绩）"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="BottomBar" type="HBoxContainer" parent="."]
+[node name="BannerLabel" type="Label" parent="UI"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -60.0
+offset_right = 320.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 40
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TopHUD" type="PanelContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 64.0
+grow_horizontal = 2
+theme = ExtResource("2_theme")
+
+[node name="Margin" type="MarginContainer" parent="UI/TopHUD"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="UI/TopHUD/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="RoundLabel" type="Label" parent="UI/TopHUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 1)
+theme_override_font_sizes/font_size = 20
+text = "第 1/3 轮"
+horizontal_alignment = 1
+
+[node name="SensLabel" type="Label" parent="UI/TopHUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 20
+text = "40.0 cm/360°"
+horizontal_alignment = 1
+
+[node name="TimerLabel" type="Label" parent="UI/TopHUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 1)
+theme_override_font_sizes/font_size = 20
+text = "0.0s"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="UI/TopHUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 1)
+theme_override_font_sizes/font_size = 20
+text = "命中 0/0"
+horizontal_alignment = 1
+
+[node name="PauseMenu" type="Control" parent="UI"]
+unique_name_in_owner = true
+visible = false
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -100.0
-offset_bottom = -28.0
 grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 12
-alignment = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
 
-[node name="BackButton" type="Button" parent="BottomBar"]
-custom_minimum_size = Vector2(180, 56)
-layout_mode = 2
-text = "返回主菜单"
-script = ExtResource("1_back")
+[node name="Dim" type="ColorRect" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
 
-[node name="PrevButton" type="Button" parent="BottomBar"]
-custom_minimum_size = Vector2(180, 56)
-layout_mode = 2
-text = "上一步"
-script = ExtResource("2_nav")
-target_scene = "res://test_config.tscn"
+[node name="Center" type="CenterContainer" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="NextButton" type="Button" parent="BottomBar"]
-custom_minimum_size = Vector2(180, 56)
+[node name="Card" type="PanelContainer" parent="UI/PauseMenu/Center"]
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
-text = "下一步"
-script = ExtResource("2_nav")
-target_scene = "res://test_result.tscn"
+
+[node name="Margin" type="MarginContainer" parent="UI/PauseMenu/Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="UI/PauseMenu/Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PauseTitle" type="Label" parent="UI/PauseMenu/Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 30
+text = "已暂停"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PauseMenu/Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "继续测试"
+
+[node name="QuitButton" type="Button" parent="UI/PauseMenu/Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "退出测试"
+
+[node name="ShotPlayer" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+
+[node name="HitPlayer" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+
+[node name="MissPlayer" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+
+[connection signal="pressed" from="UI/PauseMenu/Center/Card/Margin/VBox/ResumeButton" to="." method="_on_resume_button_pressed"]
+[connection signal="pressed" from="UI/PauseMenu/Center/Card/Margin/VBox/QuitButton" to="." method="_on_quit_button_pressed"]

@@ -11,8 +11,9 @@
 
 本项目是 Godot 4 项目，所有资源路径 (`res://`) 均相对于项目根目录。
 - `project.godot` — 项目配置入口（启动场景为 `res://main.tscn`）
-- `main.tscn` / `test_select.tscn` / `test_config.tscn` / `test_shoot.tscn` / `test_result.tscn` / `history.tscn` / `settings.tscn` / `about.tscn` — 场景文件（测试流程：选择 → 配置 → 射击 → 结果）
-- `scripts/` — 场景脚本（`main_menu.gd` 导航、`back_button.gd` 返回主菜单、`nav_button.gd` 通用跳转按钮 `@export target_scene`、`esc_nav.gd` 通用 ESC 返回按钮 `@export esc_scene`、`scene_nav.gd` 场景切换封装（含错误检查，各脚本用 `const SceneNav := preload(...)` 引用）、`top_bar.gd` 共享标题栏、`settings_menu.gd` 配置读写、`test_select.gd` / `test_config.gd` 测试流程逻辑）
+- `main.tscn` / `test_select.tscn` / `test_config.tscn` / `test_shoot.tscn` / `test_result.tscn` / `history.tscn` / `settings.tscn` / `about.tscn` — 场景文件（测试流程：选择 → 配置 → 射击 → 结果；test_shoot 为 3D 射击场场景）
+- `target.tscn` — 3D 目标预制体（程序生成靶子纹理，Area3D 命中检测，`scripts/target.gd`）
+- `scripts/` — 场景脚本（`main_menu.gd` 导航、`back_button.gd` 返回主菜单、`nav_button.gd` 通用跳转按钮 `@export target_scene`、`esc_nav.gd` 通用 ESC 返回按钮 `@export esc_scene`、`scene_nav.gd` 场景切换封装（含错误检查，各脚本用 `const SceneNav := preload(...)` 引用）、`top_bar.gd` 共享标题栏、`settings_menu.gd` 配置读写、`test_select.gd` / `test_config.gd` 测试流程逻辑、`test_shoot.gd` 射击主控（热身/轮次/数据收集/灵敏度映射/暂停）、`target.gd` 目标逻辑、`crosshair.gd` 准星绘制、`sfx.gd` 程序合成音效）
 - `scripts/test_session.gd` — autoload 单例 `TestConfig`（注册于 project.godot `[autoload]`），保存当前测试参数（测试类型/灵敏度范围/轮数/目标类型/大小/模式）、测试执行状态（`current_round`/`current_sens`/`round_results`）、`reset()` 重置方法、设置读取（`get_dpi()`/`get_fov()`），跨场景传递数据用
 - `ui/theme_valorant.tres` — 全局 UI 主题（无畏契约红黑配色，挂在各场景根节点）
 - `ui/top_bar.tscn` — 共享顶部标题栏子场景（`@export title_text`），各场景 instance 引用

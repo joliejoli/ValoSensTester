@@ -6,6 +6,12 @@ const BASE_UI_WIDTH := 1280.0
 const BASE_UI_HEIGHT := 720.0
 const MIN_UI_SCALE := 0.5
 
+# 测试场景常量（Phase 3）
+const TARGETS_PER_ROUND := 8
+const WARMUP_TARGETS := 5
+const TARGET_MAX_LIFETIME := 6.0
+const TARGET_DISTANCE := 8.0
+
 enum TestType { PSA_BINARY, CONSISTENCY }
 enum TargetType { STATIC, MOVING }
 enum TargetSize { SMALL, MEDIUM, LARGE }
@@ -96,3 +102,9 @@ func toggle_fullscreen() -> void:
 	else:
 		win.borderless = false
 		win.mode = Window.MODE_WINDOWED
+
+# 返回第 round_index 轮（0 起）使用的灵敏度 cm/360°（Phase 4 将替换为贝叶斯优化器）
+func get_round_sens(round_index: int) -> float:
+	if test_type == TestType.CONSISTENCY or rounds <= 1:
+		return (sens_min + sens_max) / 2.0
+	return lerpf(sens_min, sens_max, float(round_index) / float(rounds - 1))

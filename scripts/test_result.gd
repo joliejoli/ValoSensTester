@@ -89,6 +89,8 @@ func _build_page_chart() -> void:
 	c1.y_limits = Vector2(0, 1)
 	c1.custom_minimum_size = Vector2(0, 160)
 	if not is_consistency and not rounds.is_empty():
+		# x 轴固定为灵敏度配置范围（折线位置符合预期，与轴标签对应）
+		c1.x_limits = Vector2(TestConfig.sens_min, TestConfig.sens_max)
 		var curve := _gp_curve(rounds)
 		c1.add_band(curve["upper"], curve["lower"], Color(1, 0.368627, 0.4), "95% CI")
 		c1.add_series(curve["mean"], Color(1, 0.7, 0.72), "GP 后验")
@@ -222,6 +224,8 @@ func _build_charts() -> void:
 	var c2 := Chart.new()
 	c2.title = "灵敏度-命中率"
 	c2.y_limits = Vector2(0, 1)
+	if not is_consistency:
+		c2.x_limits = Vector2(TestConfig.sens_min, TestConfig.sens_max)
 	c2.custom_minimum_size = Vector2(0, 150)
 	var acc_pts: Array = []
 	for r in rounds:

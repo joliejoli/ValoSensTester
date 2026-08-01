@@ -44,6 +44,8 @@ grow_vertical = 2
 
 [node name="Center" type="CenterContainer" parent="Scroll"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="VBox" type="VBoxContainer" parent="Scroll/Center"]
 custom_minimum_size = Vector2(960, 0)

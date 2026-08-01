@@ -6,6 +6,7 @@ var series: Array[Dictionary] = []   # {points: Array[Vector2], color: Color, la
 var bands: Array[Dictionary] = []    # {upper: Array[Vector2], lower: Array[Vector2], color: Color, label: String}
 var y_limits := Vector2(0.0, 1.0)   # 固定 y 范围；y_auto=true 时忽略
 var y_auto := false
+var x_limits := Vector2(NAN, NAN)   # 固定 x 范围（可选，如灵敏度配置范围）；NAN=按数据自适应
 var y_format := "%.2f"
 
 const PAD_LEFT := 42.0
@@ -51,17 +52,22 @@ func _bounds() -> Dictionary:
 			max_y = maxf(max_y, p.y)
 	if min_x == INF:
 		return {"x": Vector2(0, 1), "y": Vector2(0, 1)}
-	var x_pad := (max_x - min_x) * 0.06
-	if x_pad <= 0.0:
-		x_pad = maxf(absf(max_x) * 0.1, 0.1)
+	var x_range := Vector2(0, 1)
+	if not is_nan(x_limits.x):
+		x_range = x_limits
+	else:
+		var x_pad := (max_x - min_x) * 0.06
+		if x_pad <= 0.0:
+			x_pad = maxf(absf(max_x) * 0.1, 0.1)
+		x_range = Vector2(min_x - x_pad, max_x + x_pad)
 	var y_min := min_y
 	var y_max := max_y
 	if y_auto:
 		var y_pad := (y_max - y_min) * 0.15
 		if y_pad <= 0.0:
 			y_pad = 0.1
-		return {"x": Vector2(min_x - x_pad, max_x + x_pad), "y": Vector2(y_min - y_pad, y_max + y_pad)}
-	return {"x": Vector2(min_x - x_pad, max_x + x_pad), "y": y_limits}
+		return {"x": x_range, "y": Vector2(y_min - y_pad, y_max + y_pad)}
+	return {"x": x_range, "y": y_limits}
 
 func _plot(p: Vector2, x_range: Vector2, y_range: Vector2) -> Vector2:
 	var w := size.x - PAD_LEFT - PAD_RIGHT

@@ -186,10 +186,26 @@ vertical_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
-item_count = 3
+item_count = 4
 popup/item_0/text = "标准模式"
 popup/item_1/text = "压力模式（多目标）"
 popup/item_2/text = "追踪模式（移动目标）"
+popup/item_3/text = "Flick 模式（快速拉枪）"
+
+[node name="TrackSpeedLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "追踪速度"
+vertical_alignment = 1
+
+[node name="TrackSpeedOption" type="OptionButton" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "慢（0.8 m/s）"
+popup/item_1/text = "中（1.8 m/s）"
+popup/item_2/text = "快（2.6 m/s）"
 
 [node name="ErrorLabel" type="Label" parent="Center/Card/Margin/VBox"]
 unique_name_in_owner = true

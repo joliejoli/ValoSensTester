@@ -44,6 +44,18 @@ static func aggregate(rounds: Array) -> Dictionary:
 		for s in track_scores:
 			s_sum += float(s)
 		track_acc = s_sum / float(track_scores.size())
+	# 目标切换效率（Phase 6）：相邻命中时刻间隔的中位数（压力/标准模式切换节奏）
+	var switch_secs := -1.0
+	var hit_stamps: Array = []
+	for r in rounds:
+		hit_stamps.append_array(r.get("hit_timestamps", []))
+	if hit_stamps.size() >= 4:
+		var sorted_hits := hit_stamps.duplicate()
+		sorted_hits.sort()
+		var gaps: Array = []
+		for i in range(1, sorted_hits.size()):
+			gaps.append(float(sorted_hits[i]) - float(sorted_hits[i - 1]))
+		switch_secs = median(gaps)
 	return {
 		"accuracy": float(total_hits) / float(total_targets) if total_targets > 0 else 0.0,
 		"first_shot_rate": float(first_shot) / float(total_targets) if total_targets > 0 else 0.0,
@@ -53,6 +65,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 		"wasted": total_wasted,
 		"micro_adjusts": micro,
 		"track_accuracy": track_acc,
+		"switch_secs": switch_secs,
 		"score": score_sum / float(rounds.size()) if not rounds.is_empty() else 0.0,
 	}
 

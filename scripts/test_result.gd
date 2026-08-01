@@ -63,6 +63,14 @@ func _ready() -> void:
 		_edpi_to_cm(edpi),
 	]
 	sample_label.text = "已采集 %d 轮数据" % int(s.get("samples", 0))
+	# 测试模式标注（Phase 6）
+	var mode_names := {
+		TestConfig.TestMode.STANDARD: "标准模式",
+		TestConfig.TestMode.PRESSURE: "压力模式",
+		TestConfig.TestMode.TRACKING: "追踪模式",
+		TestConfig.TestMode.FLICK: "Flick 模式",
+	}
+	sample_label.text += " · %s" % mode_names.get(TestConfig.test_mode, "")
 	var m := TestMetrics.aggregate(rounds)
 	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
 	metric_hit_time.text = "%.2fs" % m.median_hit

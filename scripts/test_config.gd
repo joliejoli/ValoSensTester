@@ -8,6 +8,7 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var target_type_option: OptionButton = %TargetTypeOption
 @onready var target_size_option: OptionButton = %TargetSizeOption
 @onready var test_mode_option: OptionButton = %TestModeOption
+@onready var track_speed_option: OptionButton = %TrackSpeedOption
 
 func _ready() -> void:
 	sens_min_spin.value = TestConfig.sens_min
@@ -16,12 +17,18 @@ func _ready() -> void:
 	target_type_option.select(TestConfig.target_type)
 	target_size_option.select(TestConfig.target_size)
 	test_mode_option.select(TestConfig.test_mode)
+	track_speed_option.select(TestConfig.track_speed_index)
+	track_speed_option.visible = TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
 		%SensMaxLabel.visible = false
 		%SensMaxSpin.visible = false
 		%SensMinLabel.text = "灵敏度（游戏内）"
 	sens_min_spin.value_changed.connect(_on_sens_changed)
 	sens_max_spin.value_changed.connect(_on_sens_changed)
+	test_mode_option.item_selected.connect(_on_mode_changed)
+
+func _on_mode_changed(index: int) -> void:
+	track_speed_option.visible = index == TestConfig.TestMode.TRACKING
 
 func _on_sens_changed(_value: float) -> void:
 	%ErrorLabel.visible = false
@@ -33,6 +40,7 @@ func _on_start_button_pressed() -> void:
 	TestConfig.target_type = target_type_option.selected
 	TestConfig.target_size = target_size_option.selected
 	TestConfig.test_mode = test_mode_option.selected
+	TestConfig.track_speed_index = track_speed_option.selected
 	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
 		TestConfig.sens_max = sens_min_spin.value
 	elif TestConfig.sens_min >= TestConfig.sens_max:

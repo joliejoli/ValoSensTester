@@ -17,7 +17,12 @@ const TARGET_DISTANCE := 8.0
 enum TestType { PSA_BINARY, CONSISTENCY }
 enum TargetType { STATIC, MOVING }
 enum TargetSize { SMALL, MEDIUM, LARGE }
-enum TestMode { STANDARD, PRESSURE, TRACKING }
+enum TestMode { STANDARD, PRESSURE, TRACKING, FLICK }
+
+# 压力模式同时目标数（Phase 6：3-5 范围取 4）
+const PRESSURE_TARGETS := 4
+# 追踪速度档位（m/s）
+const TRACK_SPEED_OPTIONS := [0.8, 1.8, 2.6]
 
 # 灵敏度使用无畏契约游戏内灵敏度值（如 0.35），非 cm/360°
 # VALORANT yaw = 0.07°/count，每 count 旋转 = 0.07 × 灵敏度 度
@@ -30,6 +35,7 @@ var rounds: int = 10
 var target_type: int = TargetType.STATIC
 var target_size: int = TargetSize.MEDIUM
 var test_mode: int = TestMode.STANDARD
+var track_speed_index: int = 1  # TRACK_SPEED_OPTIONS 下标（追踪模式速度档位）
 
 # 测试执行状态（Phase 3 使用）
 var current_round: int = 0
@@ -66,6 +72,7 @@ func reset() -> void:
 	current_sens = 0.0
 	round_results.clear()
 	opt_summary.clear()
+	track_speed_index = 1
 
 func load_settings() -> void:
 	var config := ConfigFile.new()

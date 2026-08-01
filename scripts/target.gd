@@ -23,6 +23,10 @@ var _aim_pitch_sign := 0.0
 var _aim_entered := false
 # 跟枪精度：准星停留在命中区内的时间（移动靶；由 test_shoot 每帧累计）
 var track_time := 0.0
+# 追踪模式正弦摆动（Phase 6）：水平匀速移动 + 垂直正弦，更贴近实战跟枪
+var track_sine := false
+var _sine_phase := 0.0
+var _base_y := 0.0
 
 var _sprite: Sprite3D
 var _area: Area3D
@@ -44,6 +48,7 @@ func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := 
 	_move_dir = p_dir.normalized()
 	angle_rad = p_angle_rad
 	global_position = p_position
+	_base_y = p_position.y
 	# 移动窗口以生成点为中心（修复：相机朝向任意时 world bounds 会把出生靶子瞬移到固定边界）
 	move_bounds = Vector2(p_position.x - 3.0, p_position.x + 3.0)
 	spawn_ms = Time.get_ticks_msec()
@@ -87,6 +92,10 @@ func _process(delta: float) -> void:
 			return
 		if move_speed > 0.0:
 			global_position += _move_dir * move_speed * delta
+			if track_sine:
+				# 垂直正弦摆动：±0.5m、周期约 2.5s，基于出生 y（避免逐帧累加漂移）
+				_sine_phase += delta * TAU / 2.5
+				global_position.y = _base_y + sin(_sine_phase) * 0.5
 			if global_position.x < move_bounds.x or global_position.x > move_bounds.y:
 				global_position.x = clampf(global_position.x, move_bounds.x, move_bounds.y)
 				_move_dir.x = -_move_dir.x

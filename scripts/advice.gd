@@ -24,6 +24,14 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 			"title": "跟枪精度不足",
 			"detail": "准星停留在靶心命中区内的时间仅 %.0f%%，移动目标跟枪不够稳定。" % (track_acc * 100.0),
 		})
+	# 目标切换效率（Phase 6，-1 表示样本不足）：多目标间命中间隔偏长 → 切换偏慢
+	var switch_secs := float(metrics.get("switch_secs", -1.0))
+	if switch_secs > 0.0 and switch_secs > 1.5:
+		problems.append({
+			"tag": "slow_aim",
+			"title": "目标切换偏慢",
+			"detail": "相邻目标平均命中间隔 %.1fs，多目标场景下切换节奏偏慢，需要更快的目标转移。" % switch_secs,
+		})
 	if adjust_per > 2.5:
 		problems.append({
 			"tag": "overaim",

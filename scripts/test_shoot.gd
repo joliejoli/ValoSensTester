@@ -222,9 +222,10 @@ func _spawn_single_target() -> void:
 		or TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	var speed := 0.0
 	if moving:
-		speed = 1.8 if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
-	# 大角度拉枪靶：35% 长距 / 65% 短距（角距 8°-18°），
-	# 长距上限与 sens_min 联动保证低敏 3s 超时内物理可达（复审 P0-4）
+		speed = TestConfig.TRACK_SPEED_OPTIONS[TestConfig.track_speed_index] \
+			if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
+	# 追踪模式：正弦摆动跟枪（Phase 6），非追踪保持直线移动
+	var track_sine: bool = TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	var pos := _spawn_position()
 	var tries := 0
 	while tries < 8:
@@ -242,6 +243,7 @@ func _spawn_single_target() -> void:
 	var forward := -camera.global_transform.basis.z
 	var angle := acos(clampf((pos - camera.global_position).normalized().dot(forward), -1.0, 1.0))
 	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT, angle)
+	t.track_sine = track_sine
 	t.hit.connect(_on_target_hit)
 	t.expired.connect(_on_target_expired)
 	active_targets.append(t)
@@ -250,22 +252,26 @@ func _spawn_single_target() -> void:
 # 靶子固定在世界正前方扇形（手测反馈：不做 360° 方向随机，
 # 参照 VALORANT 靶场机器人固定方向，避免转身找靶分散注意力与引入无关转身变量）
 # 水平 ±30° / 垂直 ±15°；长距 18-30°（0.10 sens 时 3s 内物理可达，取消 sens_min 联动）
+# Flick 模式（Phase 6）：全部长距靶（18-30° 扇形边缘），专测快速拉枪
 func _spawn_position() -> Vector3:
 	var cam_pos := camera.global_position
 	var yaw_off := 0.0
 	var pitch_off := 0.0
-	if randf() < 0.35:
+	var flick: bool = TestConfig.test_mode == TestConfig.TestMode.FLICK
+	if flick or randf() < 0.35:
+		# 长距/Flick：18-30° 环形，pitch 不 clamp（≤30° 仍在垂直半 FOV 33° 内，避免截断总角距）
 		var dist := deg_to_rad(randf_range(18.0, 30.0))
 		var angle := randf() * TAU
-		yaw_off = rad_to_deg(sin(angle) * dist)
+		yaw_off = clampf(rad_to_deg(sin(angle) * dist), -30.0, 30.0)
 		pitch_off = rad_to_deg(cos(angle) * dist)
 	else:
+		# 短距 6-14° 环形
 		var dist := deg_to_rad(randf_range(6.0, 14.0))
 		var angle := randf() * TAU
 		yaw_off = rad_to_deg(sin(angle) * dist)
 		pitch_off = rad_to_deg(cos(angle) * dist)
-	yaw_off = clampf(yaw_off, -30.0, 30.0)
-	pitch_off = clampf(pitch_off, -15.0, 15.0)
+		yaw_off = clampf(yaw_off, -30.0, 30.0)
+		pitch_off = clampf(pitch_off, -15.0, 15.0)
 	var moving: bool = TestConfig.target_type == TestConfig.TargetType.MOVING \
 		or TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	if moving:
@@ -285,7 +291,7 @@ func _facing_forward() -> bool:
 func _spawn_round_targets() -> void:
 	if TestConfig.test_mode == TestConfig.TestMode.PRESSURE:
 		var remaining := TestConfig.TARGETS_PER_ROUND - targets_spawned
-		for i in mini(3, remaining):
+		for i in mini(TestConfig.PRESSURE_TARGETS, remaining):
 			_spawn_single_target()
 	else:
 		_spawn_single_target()
@@ -308,6 +314,8 @@ func _on_target_hit(t: Node3D) -> void:
 		round_data["first_hit_time"] = dt
 	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
 	round_data["hit_angles"].append(float(t.angle_rad))
+	# 命中时刻（相对轮开始，切换效率数据源；Phase 6）
+	round_data["hit_timestamps"].append(dt)
 	# 越靶统计（复审 P0-5）：命中前多余开火数（含打空枪归属），无伪信号
 	round_data["overshoots"] = int(round_data.get("overshoots", 0)) + int(t.shots_against) - 1
 	# 一次性定位率：一枪命中的靶数
@@ -382,6 +390,7 @@ func _start_round() -> void:
 		"shot_timestamps": [],
 		"hit_times": [],
 		"hit_angles": [],
+		"hit_timestamps": [],
 		"correction_times": [],
 	}
 	shot_count = 0

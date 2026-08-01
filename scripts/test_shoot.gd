@@ -52,6 +52,8 @@ var _last_pitch := 0.0
 var active_targets: Array[Node3D] = []
 var round_data: Dictionary = {}
 var test_plan := TestPlan.new()
+# 目标对象池（Phase 7 性能：复用节点减少 instantiate/free）
+var _target_pool: Array[Node3D] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -216,8 +218,16 @@ func _spawn_single_target() -> void:
 	# 面向容差：转身时暂停生成，避免靶子在背后超时（提示由 _process 统一驱动）
 	if not _facing_forward():
 		return
-	var t: Node3D = TargetScene.instantiate()
-	target_root.add_child(t)
+	var t: Node3D
+	if _target_pool.is_empty():
+		t = TargetScene.instantiate()
+		target_root.add_child(t)
+		t.hit.connect(_on_target_hit)
+		t.expired.connect(_on_target_expired)
+	else:
+		t = _target_pool.pop_back()
+		target_root.add_child(t)
+		t.reset_for_pool()
 	var moving: bool = TestConfig.target_type == TestConfig.TargetType.MOVING \
 		or TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	var speed := 0.0
@@ -244,8 +254,6 @@ func _spawn_single_target() -> void:
 	var angle := acos(clampf((pos - camera.global_position).normalized().dot(forward), -1.0, 1.0))
 	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT, angle)
 	t.track_sine = track_sine
-	t.hit.connect(_on_target_hit)
-	t.expired.connect(_on_target_expired)
 	active_targets.append(t)
 	targets_spawned += 1
 
@@ -298,7 +306,13 @@ func _spawn_round_targets() -> void:
 
 func _despawn_target(t: Node3D) -> void:
 	active_targets.erase(t)
-	t.queue_free()
+	# 回收对象池（保留节点复用）；池上限 8 个，超出释放
+	if _target_pool.size() < 8:
+		target_root.remove_child(t)
+		t.reset_for_pool()
+		_target_pool.append(t)
+	else:
+		t.queue_free()
 
 func _on_target_hit(t: Node3D) -> void:
 	_despawn_target(t)

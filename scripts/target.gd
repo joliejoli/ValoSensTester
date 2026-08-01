@@ -35,12 +35,38 @@ var _move_dir := Vector3.RIGHT
 
 const TEXTURE_SIZE := 256
 
+# 程序靶子纹理静态缓存（Phase 7 性能：256×256 逐像素生成仅一次，避免每实例重复）
+static var _texture_cache: ImageTexture = null
+
 func _ready() -> void:
 	_sprite = $Sprite3D
 	_area = $Area3D
 	_shape = $Area3D/CollisionShape3D
-	_sprite.texture = make_target_texture()
+	if _texture_cache == null:
+		_texture_cache = make_target_texture()
+	_sprite.texture = _texture_cache
 	_apply_size()
+
+# 对象池复用：重置全部运行时状态（Phase 7）
+func reset_for_pool() -> void:
+	alive = true
+	move_speed = 0.0
+	radius = 0.3
+	shots_against = 0
+	first_shot_ms = -1
+	lifetime = 0.0
+	spawn_ms = 0
+	angle_rad = 0.0
+	micro_adjusts = 0
+	_aim_yaw_sign = 0.0
+	_aim_pitch_sign = 0.0
+	_aim_entered = false
+	track_time = 0.0
+	track_sine = false
+	_sine_phase = 0.0
+	_move_dir = Vector3.RIGHT
+	_sprite.modulate = Color.WHITE
+	set_process(true)
 
 func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := Vector3.RIGHT, p_angle_rad: float = 0.0) -> void:
 	radius = p_radius

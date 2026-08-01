@@ -73,7 +73,7 @@ func _ready() -> void:
 		TestConfig.rounds,
 	)
 	_apply_sens(test_plan.next_sens(0))
-	warmup_label.text = "热身阶段（数据不计入成绩）"
+	warmup_label.text = "热身阶段（数据不计入成绩）· 每靶仅一次点击，未命中即失败，超时 3 秒"
 	banner_label.visible = false
 	_spawn_single_target()
 

@@ -15,8 +15,8 @@ const PAD_TOP := 22.0
 const PAD_BOTTOM := 24.0
 const GRID_LINES := 4
 
-func add_series(points: Array, color: Color, label: String) -> void:
-	series.append({"points": points, "color": color, "label": label})
+func add_series(points: Array, color: Color, label: String, line: bool = true) -> void:
+	series.append({"points": points, "color": color, "label": label, "line": line})
 	queue_redraw()
 
 func add_band(upper: Array, lower: Array, color: Color, label: String) -> void:
@@ -108,7 +108,7 @@ func _draw_series(s: Dictionary, x_range: Vector2, y_range: Vector2) -> void:
 	var pts: Array[Vector2] = []
 	for p in s["points"]:
 		pts.append(_plot(p, x_range, y_range))
-	if pts.size() >= 2:
+	if pts.size() >= 2 and bool(s.get("line", true)):
 		draw_polyline(PackedVector2Array(pts), s["color"], 2.0, true)
 	for pt in pts:
 		draw_circle(pt, 3.0, s["color"])

@@ -14,6 +14,13 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	var eff := float(metrics.get("median_eff", 0.0))
 	# 失败试验的瞄准耗时（C 项）：区分"快而不稳"与"慢而打偏"
 	var miss_med := float(metrics.get("median_miss", 0.0))
+	if acc <= 0.0:
+		problems.append({
+			"tag": "slow_aim",
+			"title": "全部未命中或超时（得分 0）",
+			"detail": "所有靶均未在单次点击内命中，或 3 秒超时。若大部分是超时：可能是还未适应'每靶仅一次点击、快速出手'的节奏，建议先热身练习再正式测试。",
+		})
+		return problems
 	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
 	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
 	# 跟枪精度（移动靶/追踪，-1 表示无移动靶数据）
@@ -86,7 +93,7 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 			problems.append({
 				"tag": "unstable",
 				"title": "轮间稳定性波动较大",
-				"detail": "各轮得分波动幅度超过均值 12%%，状态起伏明显，适合固定灵敏度下多练稳定手感。",
+				"detail": "各轮得分波动幅度超过均值 12%，状态起伏明显，适合固定灵敏度下多练稳定手感。",
 			})
 	return problems
 

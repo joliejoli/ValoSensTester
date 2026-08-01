@@ -261,7 +261,8 @@ func _build_charts() -> void:
 	for r in rounds:
 		var td := int(r.get("targets_done", 0))
 		acc_pts.append(Vector2(float(r.get("sens", 0.0)), float(int(r.get("hits", 0))) / float(td) if td > 0 else 0.0))
-	c2.add_series(acc_pts, Color(0.6, 0.85, 1), "命中率")
+	# 成功率是离散值（12 靶阶梯），只画散点不连线，避免视觉杂乱
+	c2.add_series(acc_pts, Color(0.6, 0.85, 1), "成功率", false)
 	charts_box.add_child(c2)
 	# 3) 学习曲线（轮次-得分）
 	var c3 := Chart.new()
@@ -318,3 +319,10 @@ func _on_report_tab_changed(index: int) -> void:
 
 func _on_close_report_pressed() -> void:
 	report_popup.visible = false
+
+# ESC 行为：弹窗打开时先关弹窗，再回主菜单（由 esc_nav 处理）
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		if report_popup.visible:
+			report_popup.visible = false

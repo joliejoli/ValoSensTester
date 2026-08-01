@@ -115,6 +115,43 @@ static func grip_advice(sens: float) -> String:
 		return "高灵敏度下微调依赖手腕：注意避免长时间压腕（腕管压力），定期放松手腕（通用建议，因人而异）"
 	return "中灵敏度适合手臂+手腕混合发力：大角度用手臂、微调用手腕，保持掌心贴合鼠标（通用建议，因人而异）"
 
+# 一致性测试的"灵敏度快/慢"方向建议（基于长/短距分组命中率 + 微调指标推断）
+# 返回建议文本；数据不足时返回空串
+static func sens_direction_advice(metrics: Dictionary, targets: int) -> String:
+	var long_acc := float(metrics.get("long_acc", -1.0))
+	var short_acc := float(metrics.get("short_acc", -1.0))
+	var long_ratio := float(metrics.get("long_ratio", 0.0))
+	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
+	if long_acc < 0.0 or short_acc < 0.0:
+		return ""
+	# 长距靶样本不足（<15%）时方向推断不可靠
+	if long_ratio < 0.15:
+		return "本次长距靶样本偏少，暂无法给出灵敏度方向判断；建议多测几轮或运行 PSA 测试获得精确推荐。"
+	if long_acc - short_acc <= -0.15:
+		return "大角度拉枪明显吃力（长距命中率 %.0f%% vs 短距 %.0f%%），大范围移动跟不上——当前灵敏度可能偏低，建议调高 0.05~0.10 后重测对比。" % [long_acc * 100.0, short_acc * 100.0]
+	if adjust_per > 1.5 and short_acc < 0.8:
+		return "近距离微调不稳（每靶微调 %.1f 次且短距命中率仅 %.0f%%），准星抖动偏多——当前灵敏度可能偏高，建议调低 0.05~0.10 后重测对比。" % [adjust_per, short_acc * 100.0]
+	return "各角度表现均衡（长距 %.0f%% / 短距 %.0f%%），当前灵敏度适配良好；如需精确最优值可运行 PSA 测试。" % [long_acc * 100.0, short_acc * 100.0]
+
+# 与历史 PSA 推荐的灵敏度对比（records: 历史记录数组，找最近一条 PSA）
+# 返回对比文本；无 PSA 历史时返回空串
+static func compare_history_sens(cur_sens: float, records: Array) -> String:
+	var best_ts := 0
+	var rec: Dictionary = {}
+	for r in records:
+		var ts := int(r.get("ts", 0))
+		if r.get("type", "") == "PSA" and ts > best_ts:
+			best_ts = ts
+			rec = r
+	if rec.is_empty():
+		return ""
+	var hist := float(rec.get("sens", 0.0))
+	if cur_sens > hist + 0.05:
+		return "历史 PSA 测试推荐 %.2f，你当前测试 %.2f 偏高 —— 若感觉控制吃力可尝试调低。" % [hist, cur_sens]
+	if cur_sens < hist - 0.05:
+		return "历史 PSA 测试推荐 %.2f，你当前测试 %.2f 偏低 —— 若感觉拉枪费力可尝试调高。" % [hist, cur_sens]
+	return "历史 PSA 测试推荐 %.2f，与当前测试一致，方向无误。" % hist
+
 # 分享文本卡片
 static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advice: Array, rounds: Array, grip: String) -> String:
 	var is_consistency: bool = s.get("is_consistency", false)

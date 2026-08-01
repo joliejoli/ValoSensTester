@@ -56,6 +56,25 @@ static func aggregate(rounds: Array) -> Dictionary:
 		for i in range(1, sorted_hits.size()):
 			gaps.append(float(sorted_hits[i]) - float(sorted_hits[i - 1]))
 		switch_secs = median(gaps)
+	# 长/短距分组命中率（一致性灵敏度方向分析）：长距阈值 15°（弧度）
+	# 命中靶角度来自 hit_angles，超时靶角度来自 expired_angles
+	var long_hits := 0
+	var long_total := 0
+	var short_hits := 0
+	var short_total := 0
+	for r in rounds:
+		for a in r.get("hit_angles", []):
+			if float(a) >= deg_to_rad(15.0):
+				long_hits += 1
+				long_total += 1
+			else:
+				short_hits += 1
+				short_total += 1
+		for a in r.get("expired_angles", []):
+			if float(a) >= deg_to_rad(15.0):
+				long_total += 1
+			else:
+				short_total += 1
 	return {
 		"accuracy": float(total_hits) / float(total_targets) if total_targets > 0 else 0.0,
 		"first_shot_rate": float(first_shot) / float(total_targets) if total_targets > 0 else 0.0,
@@ -66,6 +85,9 @@ static func aggregate(rounds: Array) -> Dictionary:
 		"micro_adjusts": micro,
 		"track_accuracy": track_acc,
 		"switch_secs": switch_secs,
+		"long_acc": float(long_hits) / float(long_total) if long_total > 0 else -1.0,
+		"short_acc": float(short_hits) / float(short_total) if short_total > 0 else -1.0,
+		"long_ratio": float(long_total) / float(total_targets) if total_targets > 0 else 0.0,
 		"score": score_sum / float(rounds.size()) if not rounds.is_empty() else 0.0,
 	}
 

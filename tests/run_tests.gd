@@ -23,6 +23,7 @@ func _init() -> void:
 	_test_bo_convergence()
 	_test_gp_variance()
 	_test_metrics()
+	_test_sens_direction()
 	_test_history_store()
 	_test_chart()
 	await _test_micro_detect()
@@ -114,6 +115,30 @@ func _test_metrics() -> void:
 	_check("跟枪精度平均 0.75", absf(m.track_accuracy - 0.75) < 1e-9)
 	_check("切换间隔 median([1,1,1,1])=1.0", absf(m.switch_secs - 1.0) < 1e-9)
 	_check("每靶微调 20/12=1.67", absf(float(m.micro_adjusts) / 12.0 - 20.0 / 12.0) < 1e-9)
+
+# ---------- 灵敏度方向建议 ----------
+
+func _test_sens_direction() -> void:
+	# 长距明显差 → 偏低建议
+	var m := {"long_acc": 0.4, "short_acc": 0.85, "long_ratio": 0.35, "micro_adjusts": 5}
+	var t := Advice.sens_direction_advice(m, 30)
+	_check("长距弱 → 偏低方向建议", t.contains("偏低"), t)
+	# 微调多 + 短距差 → 偏高建议
+	var m2 := {"long_acc": 0.8, "short_acc": 0.6, "long_ratio": 0.35, "micro_adjusts": 60}
+	var t2 := Advice.sens_direction_advice(m2, 30)
+	_check("微调多+短距差 → 偏高方向建议", t2.contains("偏高"), t2)
+	# 均衡 → 适配良好
+	var m3 := {"long_acc": 0.8, "short_acc": 0.85, "long_ratio": 0.35, "micro_adjusts": 20}
+	_check("均衡 → 适配良好", Advice.sens_direction_advice(m3, 30).contains("适配良好"))
+	# 长距样本不足 → 无法判断
+	var m4 := {"long_acc": 0.5, "short_acc": 0.8, "long_ratio": 0.05, "micro_adjusts": 5}
+	_check("长距样本少 → 无法判断", Advice.sens_direction_advice(m4, 30).contains("无法给出"))
+	# 历史对比
+	_check("无 PSA 历史 → 空", Advice.compare_history_sens(0.3, []).is_empty())
+	var recs := [{"ts": 1000, "type": "PSA", "sens": 0.28}, {"ts": 2000, "type": "CONSISTENCY", "sens": 0.3}]
+	_check("历史 PSA 0.28 vs 当前 0.35 → 偏高", Advice.compare_history_sens(0.35, recs).contains("偏高"))
+	_check("历史 PSA 0.28 vs 当前 0.3 → 一致", Advice.compare_history_sens(0.30, recs).contains("一致"))
+	_check("历史 PSA 0.28 vs 当前 0.2 → 偏低", Advice.compare_history_sens(0.20, recs).contains("偏低"))
 
 # ---------- 历史存储 ----------
 

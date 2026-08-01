@@ -352,6 +352,9 @@ func _on_target_hit(t: Node3D) -> void:
 
 func _on_target_expired(t: Node3D) -> void:
 	_despawn_target(t)
+	# 记录超时靶角度（一致性灵敏度方向分析数据源；Phase 6 补充）
+	if state == State.ACTIVE:
+		round_data["expired_angles"].append(float(t.angle_rad))
 	if state == State.WARMUP:
 		_advance_warmup()
 	elif state == State.ACTIVE:
@@ -405,6 +408,7 @@ func _start_round() -> void:
 		"hit_times": [],
 		"hit_angles": [],
 		"hit_timestamps": [],
+		"expired_angles": [],
 		"correction_times": [],
 	}
 	shot_count = 0

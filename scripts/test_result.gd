@@ -144,6 +144,18 @@ func _make_advice_controls() -> Array:
 		out.append(HSeparator.new())
 	for a in advice:
 		out.append(_mk_label("训练建议：%s" % a, 0.95, false))
+	# 一致性测试：灵敏度快/慢方向建议（角度分组 + 历史 PSA 对比）
+	if s.get("is_consistency", false):
+		var total_targets := 0
+		for r in rounds:
+			total_targets += int(r.get("targets_done", 0))
+		var dir_advice := Advice.sens_direction_advice(metrics, total_targets)
+		if not dir_advice.is_empty():
+			out.append(_mk_label("灵敏度方向：" + dir_advice, 0.95, false))
+		var hist_advice := Advice.compare_history_sens(
+			float(s.get("best_sens", 0.0)), HistoryStore.load_records())
+		if not hist_advice.is_empty():
+			out.append(_mk_label(hist_advice, 0.85, false))
 	out.append(_mk_label(Advice.grip_advice(float(s.get("best_sens", 0.0))), 0.72, false))
 	return out
 

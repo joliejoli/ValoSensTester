@@ -135,7 +135,7 @@ horizontal_alignment = 1
 [node name="DialogText" type="Label" parent="Popup/Center/DialogCard/Margin/VBox"]
 layout_mode = 2
 autowrap_mode = 2
-text = "二分法 (PSA)：通过多轮测试不断缩小灵敏度范围，快速逼近最适合你的灵敏度。\n\nConsistency 测试：在固定灵敏度下重复多轮测试，评估你的瞄准稳定性与一致性。"
+text = "二分法 (PSA)：通过多轮测试不断缩小灵敏度范围，快速逼近最适合你的灵敏度。\n\nConsistency 测试：在固定灵敏度下重复多轮测试，评估你的瞄准稳定性与一致性。\n\n靶子固定出现在正前方扇形区域（水平 ±30°/垂直 ±15°），请保持正面朝向射击；测试期间请关闭鼠标指针加速。\n\n每轮 12 个靶，超时 3 秒（超时计未命中）。"
 
 [node name="DialogOk" type="Button" parent="Popup/Center/DialogCard/Margin/VBox"]
 custom_minimum_size = Vector2(0, 48)

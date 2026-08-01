@@ -16,6 +16,7 @@ enum State { WARMUP, BANNER, ACTIVE, FINISHED }
 @onready var stats_label: Label = %StatsLabel
 @onready var banner_label: Label = %BannerLabel
 @onready var warmup_label: Label = %WarmupLabel
+@onready var facing_hint: Label = %FacingHint
 @onready var pause_menu: Control = %PauseMenu
 @onready var shot_player: AudioStreamPlayer = %ShotPlayer
 @onready var hit_player: AudioStreamPlayer = %HitPlayer
@@ -85,8 +86,13 @@ func _apply_mouse_motion(relative: Vector2) -> void:
 func _process(_delta: float) -> void:
 	if paused:
 		return
+	# 朝向提示由朝向状态统一驱动（回正自动隐藏）
+	facing_hint.visible = not _facing_forward() and (state == State.WARMUP or state == State.ACTIVE)
 	if state == State.ACTIVE:
 		timer_label.text = "%.1fs" % ((Time.get_ticks_msec() - round_start_ms) / 1000.0)
+		# 面向回正后自动补生成（转身暂停生成时的重试）
+		if active_targets.is_empty() and targets_done < TestConfig.TARGETS_PER_ROUND:
+			_spawn_round_targets()
 
 func _shoot() -> void:
 	shot_player.play()
@@ -122,6 +128,9 @@ func _cast_ray() -> Dictionary:
 	return space.intersect_ray(params)
 
 func _spawn_single_target() -> void:
+	# 面向容差：转身时暂停生成，避免靶子在背后超时（提示由 _process 统一驱动）
+	if not _facing_forward():
+		return
 	var t: Node3D = TargetScene.instantiate()
 	target_root.add_child(t)
 	var moving: bool = TestConfig.target_type == TestConfig.TargetType.MOVING \
@@ -150,26 +159,25 @@ func _spawn_single_target() -> void:
 	active_targets.append(t)
 	targets_spawned += 1
 
-# 按当前相机朝向采样靶位（复审 P0-1/P0-2）：
-# yaw_off/pitch_off 为相对相机朝向的角度，绕世界 Y 旋转到相机当前 yaw；
-# 不限制世界 y（相机 pitch 时世界 y 限制会破坏屏幕角距，相对 pitch 采样已 ≤18° 远小于半视场）
-# 长距走水平大角度（垂直 FOV 有限，向下视野只有约 3°，水平才是大范围拉枪空间）
-# 移动靶：yaw clamp ±15°（移动边界 ±4.5m≈29.4°，0.8m/s×3s=2.4m 位移需留余量；复审 P1-2）
+# 靶子固定在世界正前方扇形（手测反馈：不做 360° 方向随机，
+# 参照 VALORANT 靶场机器人固定方向，避免转身找靶分散注意力与引入无关转身变量）
+# 水平 ±30° / 垂直 ±15°；长距 18-30°（0.10 sens 时 3s 内物理可达，取消 sens_min 联动）
 func _spawn_position() -> Vector3:
 	var cam_pos := camera.global_position
 	var yaw_off := 0.0
 	var pitch_off := 0.0
 	if randf() < 0.35:
-		var t_low := clampf((TestConfig.sens_min - 0.10) / 0.30, 0.0, 1.0)
-		var long_lo := lerpf(20.0, 28.0, t_low)
-		var long_hi := lerpf(22.0, 46.0, t_low)
-		yaw_off = randf_range(long_lo, long_hi) * (1.0 if randi() % 2 == 0 else -1.0)
-		pitch_off = randf_range(-12.0, 12.0)
-	else:
-		var dist := deg_to_rad(randf_range(8.0, 18.0))
+		var dist := deg_to_rad(randf_range(18.0, 30.0))
 		var angle := randf() * TAU
 		yaw_off = rad_to_deg(sin(angle) * dist)
 		pitch_off = rad_to_deg(cos(angle) * dist)
+	else:
+		var dist := deg_to_rad(randf_range(6.0, 14.0))
+		var angle := randf() * TAU
+		yaw_off = rad_to_deg(sin(angle) * dist)
+		pitch_off = rad_to_deg(cos(angle) * dist)
+	yaw_off = clampf(yaw_off, -30.0, 30.0)
+	pitch_off = clampf(pitch_off, -15.0, 15.0)
 	var moving: bool = TestConfig.target_type == TestConfig.TargetType.MOVING \
 		or TestConfig.test_mode == TestConfig.TestMode.TRACKING
 	if moving:
@@ -179,9 +187,12 @@ func _spawn_position() -> Vector3:
 		tan(deg_to_rad(pitch_off)),
 		-1.0,
 	) * TestConfig.TARGET_DISTANCE
-	# 相机变换 = 绕世界 Y 偏航 × 绕局部 X 俯仰（YXZ），与 _apply_mouse_motion 一致
-	var cam_basis := Basis(Vector3.UP, _yaw) * Basis(Vector3.RIGHT, _pitch)
-	return cam_pos + cam_basis * rel
+	# 世界固定方向（不旋转到相机朝向）：玩家保持面向正前方扇形
+	return cam_pos + rel
+
+# 朝向容差：玩家严重转身时不生成靶子并提示回正（避免转身超时被误判为灵敏度差）
+func _facing_forward() -> bool:
+	return absf(_yaw) < deg_to_rad(55.0) and absf(_pitch) < deg_to_rad(35.0)
 
 func _spawn_round_targets() -> void:
 	if TestConfig.test_mode == TestConfig.TestMode.PRESSURE:

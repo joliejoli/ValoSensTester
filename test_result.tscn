@@ -406,12 +406,6 @@ layout_mode = 2
 toggle_mode = true
 text = "轮次对比表"
 
-[node name="TabAdvice" type="Button" parent="ReportPopup/Center/Card/Margin/VBox/TabHeader"]
-custom_minimum_size = Vector2(150, 42)
-layout_mode = 2
-toggle_mode = true
-text = "分析与建议"
-
 [node name="PanelCharts" type="VBoxContainer" parent="ReportPopup/Center/Card/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -431,16 +425,6 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
-
-[node name="PanelAdvice" type="ScrollContainer" parent="ReportPopup/Center/Card/Margin/VBox"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="AdviceBox" type="VBoxContainer" parent="ReportPopup/Center/Card/Margin/VBox/PanelAdvice"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 8
 
 [node name="ShareRow" type="HBoxContainer" parent="ReportPopup/Center/Card/Margin/VBox"]
 layout_mode = 2
@@ -469,6 +453,5 @@ text = "关闭"
 [connection signal="pressed" from="BottomBar/ReportButton" to="." method="_on_report_button_pressed"]
 [connection signal="pressed" from="ReportPopup/Center/Card/Margin/VBox/TabHeader/TabCharts" to="." method="_on_report_tab_changed" binds= [0]]
 [connection signal="pressed" from="ReportPopup/Center/Card/Margin/VBox/TabHeader/TabTable" to="." method="_on_report_tab_changed" binds= [1]]
-[connection signal="pressed" from="ReportPopup/Center/Card/Margin/VBox/TabHeader/TabAdvice" to="." method="_on_report_tab_changed" binds= [2]]
 [connection signal="pressed" from="ReportPopup/Center/Card/Margin/VBox/ShareRow/ShareButton" to="." method="_on_share_pressed"]
 [connection signal="pressed" from="ReportPopup/Center/Card/Margin/VBox/CloseReport" to="." method="_on_close_report_pressed"]

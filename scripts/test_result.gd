@@ -28,7 +28,6 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var report_popup: Control = %ReportPopup
 @onready var charts_box: VBoxContainer = %ChartsBox
 @onready var table_box: VBoxContainer = %TableBox
-@onready var advice_box: VBoxContainer = %AdviceBox
 @onready var share_hint: Label = %ShareHint
 
 var _share_metrics: Dictionary = {}
@@ -108,6 +107,11 @@ func _build_page_advice() -> void:
 		c.queue_free()
 	for ctrl in _make_advice_controls():
 		%PageAdviceBox.add_child(ctrl)
+	# 分享卡片数据与结果页建议同源
+	var metrics := TestMetrics.aggregate(TestConfig.round_results)
+	_share_metrics = metrics
+	_share_problems = Advice.diagnose(metrics, TestConfig.round_results)
+	_share_advice = Advice.train_advice(_share_problems)
 
 func _make_advice_controls() -> Array:
 	var rounds: Array = TestConfig.round_results
@@ -198,7 +202,6 @@ func _edpi_to_cm(edpi: float) -> float:
 func _on_report_button_pressed() -> void:
 	_build_charts()
 	_build_table()
-	_build_advice()
 	report_popup.visible = true
 
 func _round_score(r: Dictionary) -> float:
@@ -275,17 +278,6 @@ func _build_table() -> void:
 			row.add_child(lab)
 		table_box.add_child(row)
 
-func _build_advice() -> void:
-	for c in advice_box.get_children():
-		c.queue_free()
-	for ctrl in _make_advice_controls():
-		advice_box.add_child(ctrl)
-	var metrics := TestMetrics.aggregate(TestConfig.round_results)
-	_share_metrics = metrics
-	_share_problems = Advice.diagnose(metrics, TestConfig.round_results)
-	_share_advice = Advice.train_advice(_share_problems)
-	share_hint.text = ""
-
 func _on_share_pressed() -> void:
 	var s: Dictionary = TestConfig.opt_summary
 	var text := Advice.share_text(s, _share_metrics, _share_problems, _share_advice,
@@ -296,7 +288,6 @@ func _on_share_pressed() -> void:
 func _on_report_tab_changed(index: int) -> void:
 	%PanelCharts.visible = index == 0
 	%PanelTable.visible = index == 1
-	%PanelAdvice.visible = index == 2
 
 func _on_close_report_pressed() -> void:
 	report_popup.visible = false

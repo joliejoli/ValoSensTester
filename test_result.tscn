@@ -47,69 +47,6 @@ color = Color(0.0588235, 0.0980392, 0.137255, 1)
 [node name="TopBar" parent="." instance=ExtResource("3_top")]
 title_text = "测试结果"
 
-[node name="HelpButton" type="Button" parent="."]
-unique_name_in_owner = true
-visible = true
-z_index = 10
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -64.0
-offset_top = 96.0
-offset_right = -24.0
-offset_bottom = 136.0
-grow_horizontal = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_help_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_help_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_help_hover")
-theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
-theme_override_colors/font_hover_color = Color(0.06, 0.06, 0.08, 1)
-theme_override_font_sizes/font_size = 20
-text = "!"
-
-[node name="HelpPanel" type="PanelContainer" parent="."]
-unique_name_in_owner = true
-visible = false
-z_index = 5
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -540.0
-offset_top = 92.0
-offset_right = -88.0
-offset_bottom = 520.0
-grow_horizontal = 0
-mouse_filter = 2
-
-[node name="Margin" type="MarginContainer" parent="HelpPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
-
-[node name="HelpLabel" type="Label" parent="HelpPanel/Margin"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 13
-text = "【综合评分】= 50%准确率 + 30%速度 + 20%一致性（每轮 0~1 分）
-
-准确率 = 命中数 / 已出靶数（超时=未命中）
-速度 = 1 / (1+中位轨迹效率)，轨迹效率 = 耗时×灵敏度÷角距（一次到位≈1，来回修正>1）
-一致性 = 1 / (1+耗时波动 + 0.25×空枪率)
-
-【结果页曲线】
-灰点 = 每轮实测得分；粉线 = 预测得分曲线；红色阴影 = 95% 置信区间（越宽越不确定，两端为未测区域）
-峰值位置 = 推荐灵敏度
-
-【详细报告弹窗】
-图1 综合评分：同上放大版
-图2 命中率：命中率随灵敏度的变化（看准不准）
-图3 学习曲线：每轮得分走势（波动大 = 状态不稳，结果可信度打折）"
-autowrap_mode = 2
-
 [node name="EscHandler" type="Node" parent="."]
 script = ExtResource("4_esc")
 esc_scene = "res://main.tscn"
@@ -531,6 +468,69 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "关闭"
+
+[node name="HelpButton" type="Button" parent="."]
+unique_name_in_owner = true
+visible = true
+z_index = 10
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -64.0
+offset_top = 96.0
+offset_right = -24.0
+offset_bottom = 136.0
+grow_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_help_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_help_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_help_hover")
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_colors/font_hover_color = Color(0.06, 0.06, 0.08, 1)
+theme_override_font_sizes/font_size = 20
+text = "!"
+
+[node name="HelpPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 5
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -540.0
+offset_top = 92.0
+offset_right = -88.0
+offset_bottom = 520.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="HelpPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="HelpLabel" type="Label" parent="HelpPanel/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "【综合评分】= 50%准确率 + 30%速度 + 20%一致性（每轮 0~1 分）
+
+准确率 = 命中数 / 已出靶数（超时=未命中）
+速度 = 1 / (1+中位轨迹效率)，轨迹效率 = 耗时×灵敏度÷角距（一次到位≈1，来回修正>1）
+一致性 = 1 / (1+耗时波动 + 0.25×空枪率)
+
+【结果页曲线】
+灰点 = 每轮实测得分；粉线 = 预测得分曲线；红色阴影 = 95% 置信区间（越宽越不确定，两端为未测区域）
+峰值位置 = 推荐灵敏度
+
+【详细报告弹窗】
+图1 综合评分：同上放大版
+图2 命中率：命中率随灵敏度的变化（看准不准）
+图3 学习曲线：每轮得分走势（波动大 = 状态不稳，结果可信度打折）"
+autowrap_mode = 2
 
 [connection signal="pressed" from="BottomBar/HistoryButton" to="." method="_on_history_button_pressed"]
 [connection signal="pressed" from="BottomBar/ReportButton" to="." method="_on_report_button_pressed"]

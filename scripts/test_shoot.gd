@@ -13,6 +13,7 @@ const AIM_TRACK_ANGLE := deg_to_rad(25.0)
 const AIM_MOTION_DEAD_ZONE := deg_to_rad(0.05)
 const MISS_ASSIGN_ANGLE := deg_to_rad(15.0)
 const MISS_ASSIGN_ANGLE_PRESSURE := deg_to_rad(8.0)
+const MISS_ASSIGN_ANGLE_MOVING := deg_to_rad(25.0)  # 移动靶跟丢/预判失误偏离大，放宽归属
 
 @onready var camera: Camera3D = %Camera
 @onready var target_root: Node3D = %TargetRoot
@@ -189,15 +190,17 @@ func _shoot() -> void:
 
 # 打空枪：归属到准星方向最近的活动靶，
 # 使 first_shot_ms/微调耗时数据真实（否则 first_shot_ms=命中时刻，修正恒为 0）
-# 多目标（PRESSURE）时归属不可靠，阈值收紧（附录 D P1-4）
+# 阈值按靶类型：静止 15°（PRESSURE 8°）/ 移动 25°（跟丢偏离大是常态）
 func _record_miss_shot(now_ms: int) -> void:
 	var forward := -camera.global_transform.basis.z
-	var best_ang := MISS_ASSIGN_ANGLE_PRESSURE if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else MISS_ASSIGN_ANGLE
 	var best_target: Node3D = null
+	var best_ang := INF
 	for t in active_targets:
 		var dir := (t.global_position - camera.global_position).normalized()
 		var ang := acos(clampf(dir.dot(forward), -1.0, 1.0))
-		if ang < best_ang:
+		var limit := MISS_ASSIGN_ANGLE_MOVING if float(t.get("move_speed")) > 0.0 \
+			else (MISS_ASSIGN_ANGLE_PRESSURE if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else MISS_ASSIGN_ANGLE)
+		if ang < limit and ang < best_ang:
 			best_ang = ang
 			best_target = t
 	if best_target != null:

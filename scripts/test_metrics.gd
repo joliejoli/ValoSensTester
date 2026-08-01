@@ -7,6 +7,7 @@ const Objective := preload("res://scripts/test_objective.gd")
 static func aggregate(rounds: Array) -> Dictionary:
 	var total_targets := 0
 	var total_hits := 0
+	var total_shots := 0
 	var total_wasted := 0
 	var first_shot := 0
 	var micro := 0
@@ -18,6 +19,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
 		total_hits += int(r.get("hits", 0))
+		total_shots += int(r.get("shots", 0))
 		total_wasted += int(r.get("overshoots", 0))
 		first_shot += int(r.get("first_shot_hits", 0))
 		micro += int(r.get("micro_adjusts", 0))
@@ -77,6 +79,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 				short_total += 1
 	return {
 		"accuracy": float(total_hits) / float(total_targets) if total_targets > 0 else 0.0,
+		"shot_accuracy": float(total_hits) / float(total_shots) if total_shots > 0 else 0.0,
 		"first_shot_rate": float(first_shot) / float(total_targets) if total_targets > 0 else 0.0,
 		"median_hit": median(hit_times),
 		"median_eff": median(eff_times),

@@ -77,7 +77,8 @@ func _ready() -> void:
 	}
 	sample_label.text += " · %s" % mode_names.get(TestConfig.test_mode, "")
 	var m := TestMetrics.aggregate(rounds)
-	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
+	# 第 1 格：靶命中率（含超时惩罚）+ 开枪命中率（含空枪，直接反映打空枪）
+	metric_accuracy.text = "靶 %.1f%%\n枪 %.1f%%" % [m.accuracy * 100.0, m.shot_accuracy * 100.0]
 	metric_hit_time.text = "%.2fs" % m.median_hit
 	var total_targets := 0
 	for r in rounds:

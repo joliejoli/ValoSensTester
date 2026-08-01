@@ -29,6 +29,7 @@ func _init() -> void:
 	await 	_test_micro_detect()
 	await _test_long_quota()
 	await _test_blind_sens()
+	await _test_moving_assign()
 	await _test_scenes()
 	await _test_flat_detection()
 	print("通过 %d 项，失败 %d 项" % [pass_count, failures])
@@ -112,6 +113,7 @@ func _test_metrics() -> void:
 	]
 	var m := TestMetrics.aggregate(rounds)
 	_check("命中率 10/12", absf(m.accuracy - 10.0 / 12.0) < 1e-9)
+	_check("开枪命中率 10/11", absf(m.shot_accuracy - 10.0 / 11.0) < 1e-9)
 	_check("一次定位率 6/12", absf(m.first_shot_rate - 0.5) < 1e-9)
 	_check("修正过滤 0 → 0.3", absf(m.median_correct - 0.3) < 1e-9)
 	_check("归一化耗时 median([0.875,0.7,0.6125])=0.7", absf(m.median_eff - 0.7) < 1e-9)
@@ -235,6 +237,33 @@ func _test_blind_sens() -> void:
 	await process_frame
 	shoot._apply_sens(0.35)
 	_check("单盲：HUD 不显示灵敏度数值", shoot.get_node("%SensLabel").text.contains("??"), shoot.get_node("%SensLabel").text)
+
+# ---------- 移动靶空枪归属（命中率修复） ----------
+
+func _test_moving_assign() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	await physics_frame
+	var tc: Node = root.get_node("TestConfig")
+	tc.set("test_mode", 0)  # STANDARD
+	var cam: Camera3D = shoot.get_node("%Camera")
+	# 移动靶在准星 20° 处：应归属（阈值 25°）
+	var tm: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()
+	shoot.target_root.add_child(tm)
+	# 静止靶在准星 20° 处：不应归属（阈值 15°）
+	var ts: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()
+	shoot.target_root.add_child(ts)
+	await process_frame
+	await physics_frame
+	tm.setup(0.2, cam.global_position + Vector3(0, 0, -8).rotated(Vector3.UP, deg_to_rad(20.0)), 0.8, Vector3.RIGHT)
+	ts.setup(0.2, cam.global_position + Vector3(0, 0, -8).rotated(Vector3.UP, deg_to_rad(20.0)))
+	shoot.active_targets.append(tm)
+	shoot.active_targets.append(ts)
+	await physics_frame
+	shoot._record_miss_shot(Time.get_ticks_msec())
+	_check("移动靶 20° 空枪归属（放宽 25°）", int(tm.shots_against) == 1, "=%d" % int(tm.shots_against))
+	_check("静止靶 20° 空枪不归属（15° 阈值）", int(ts.shots_against) == 0, "=%d" % int(ts.shots_against))
 
 # ---------- 场景实例化 ----------
 

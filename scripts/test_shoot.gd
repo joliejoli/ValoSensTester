@@ -113,6 +113,9 @@ func _update_micro_adjust_detection() -> void:
 	var closest: Node3D = null
 	var best := deg_to_rad(25.0)
 	for t in active_targets:
+		# 移动靶/追踪：追枪反转是跟随修正不是定位微调（附录 D P1-1），不计入
+		if float(t.get("move_speed")) > 0.0:
+			continue
 		var ang := _angle_to_target(t)
 		if ang < best:
 			best = ang
@@ -122,12 +125,16 @@ func _update_micro_adjust_detection() -> void:
 	var entered := best < deg_to_rad(12.0)
 	var rev := 0
 	if entered:
-		if int(yaw_sign) != 0 and int(yaw_sign) != int(closest._aim_yaw_sign):
-			rev += 1
-		if int(pitch_sign) != 0 and int(pitch_sign) != int(closest._aim_pitch_sign):
-			rev += 1
-	closest._aim_yaw_sign = yaw_sign if entered else 0.0
-	closest._aim_pitch_sign = pitch_sign if entered else 0.0
+		# 首次进入瞄准区只记录方向，不计数（附录 D P0-2：初始符号 0 会误计 1 次）
+		if closest._aim_entered:
+			if int(yaw_sign) != 0 and int(yaw_sign) != int(closest._aim_yaw_sign):
+				rev += 1
+			if int(pitch_sign) != 0 and int(pitch_sign) != int(closest._aim_pitch_sign):
+				rev += 1
+		else:
+			closest._aim_entered = true
+		closest._aim_yaw_sign = yaw_sign
+		closest._aim_pitch_sign = pitch_sign
 	closest.micro_adjusts += rev
 
 func _angle_to_target(t: Node3D) -> float:
@@ -157,11 +164,12 @@ func _shoot() -> void:
 	_record_miss_shot(Time.get_ticks_msec())
 	_on_miss()
 
-# 打空枪：归属到准星方向最近的活动靶（角距 <15°），
+# 打空枪：归属到准星方向最近的活动靶，
 # 使 first_shot_ms/微调耗时数据真实（否则 first_shot_ms=命中时刻，修正恒为 0）
+# 多目标（PRESSURE）时归属不可靠，阈值收紧至 8°（附录 D P1-4）
 func _record_miss_shot(now_ms: int) -> void:
 	var forward := -camera.global_transform.basis.z
-	var best_ang := deg_to_rad(15.0)
+	var best_ang := deg_to_rad(8.0 if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else 15.0)
 	var best_target: Node3D = null
 	for t in active_targets:
 		var dir := (t.global_position - camera.global_position).normalized()
@@ -210,7 +218,10 @@ func _spawn_single_target() -> void:
 			break
 		pos = _spawn_position()
 		tries += 1
-	var angle := acos(clampf(-(pos - camera.global_position).normalized().z, -1.0, 1.0))
+	# 命中角距 θ = spawn 时相对相机朝向的角距（附录 D P0-1：
+	# 世界 -Z 角在玩家 yaw 漂移时失真，speed 归一化分母轮间不公平）
+	var forward := -camera.global_transform.basis.z
+	var angle := acos(clampf((pos - camera.global_position).normalized().dot(forward), -1.0, 1.0))
 	t.setup(_target_radius(), pos, speed, Vector3.RIGHT if randi() % 2 == 0 else Vector3.LEFT, angle)
 	t.hit.connect(_on_target_hit)
 	t.expired.connect(_on_target_expired)

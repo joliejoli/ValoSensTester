@@ -99,18 +99,21 @@ func _show_detail(rec: Dictionary) -> void:
 		int(rec.get("rounds", 0)),
 	]
 	var m: Dictionary = rec.get("metrics", {})
-	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n命中率 %.1f%% · 中位命中 %.2fs · 中位修正 %.2fs · 多余开火 %d" % [
+	var rounds: Array = rec.get("round_results", [])
+	var total_targets := 0
+	for r in rounds:
+		total_targets += int(r.get("targets_done", 0))
+	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n命中率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次 · 多余开火 %d" % [
 		float(rec.get("score_mean", 0.0)),
 		float(rec.get("score_low", 0.0)),
 		float(rec.get("score_high", 0.0)),
 		float(m.get("accuracy", 0.0)) * 100.0,
 		float(m.get("median_hit", 0.0)),
-		float(m.get("median_correct", 0.0)),
+		float(m.get("micro_adjusts", 0)) / float(maxf(total_targets, 1)),
 		int(m.get("wasted", 0)),
 	]
 	for child in detail_rows.get_children():
 		child.queue_free()
-	var rounds: Array = rec.get("round_results", [])
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
 	for text in ["轮次", "灵敏度", "命中率", "命中耗时(s)", "修正(s)", "多余开火"]:

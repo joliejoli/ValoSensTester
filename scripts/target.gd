@@ -20,6 +20,7 @@ var angle_rad := 0.0
 var micro_adjusts := 0
 var _aim_yaw_sign := 0.0
 var _aim_pitch_sign := 0.0
+var _aim_entered := false
 
 var _sprite: Sprite3D
 var _area: Area3D

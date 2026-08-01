@@ -12,7 +12,6 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 		targets += int(r.get("targets_done", 0))
 	var wasted_per := float(metrics.wasted) / float(maxf(targets, 1))
 	var acc := float(metrics.accuracy)
-	var hit := float(metrics.median_hit)
 	var correct := float(metrics.median_correct)
 	var first_rate := float(metrics.get("first_shot_rate", 0.0))
 	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
@@ -41,17 +40,19 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 			"title": "命中率偏低（时间压力/反应偏慢）",
 			"detail": "命中率 %.0f%%，部分目标可能 3s 超时。首次出手速度是主要瓶颈。" % (acc * 100.0),
 		})
-	if acc >= 0.85 and hit > 1.0:
+	# 快慢判断用归一化耗时（t×sens/θ，轨迹效率，与 speed 得分口径一致；附录 D P1-2）
+	var eff := float(metrics.get("median_eff", 0.0))
+	if eff > 0.0 and acc >= 0.85 and eff > 0.6:
 		problems.append({
 			"tag": "slow_aim",
 			"title": "求稳但偏慢（微调能力需提升）",
-			"detail": "命中率 %.0f%% 但中位命中耗时 %.2fs，靶子基本都能打中，但慢在最后一步微调。" % [acc * 100.0, hit],
+			"detail": "命中率 %.0f%% 但轨迹效率 %.2f（等效鼠标移动距离/角距），慢在最后一步微调。" % [acc * 100.0, eff],
 		})
-	if hit < 0.6 and acc < 0.8:
+	if eff > 0.0 and eff < 0.35 and acc < 0.8:
 		problems.append({
 			"tag": "fast_unstable",
 			"title": "快而不稳",
-			"detail": "中位命中 %.2fs 很快但命中率只有 %.0f%%，建议放慢节奏保证准星停稳再开枪。" % [hit, acc * 100.0],
+			"detail": "轨迹效率 %.2f 很快但命中率只有 %.0f%%，建议放慢节奏保证准星停稳再开枪。" % [eff, acc * 100.0],
 		})
 	var scores: Array = []
 	for r in rounds:

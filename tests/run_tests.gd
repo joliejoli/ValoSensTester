@@ -256,6 +256,11 @@ func _test_moving_assign() -> void:
 	shoot.target_root.add_child(ts)
 	await process_frame
 	await physics_frame
+	# 清掉 _ready 生成的热身靶（避免随机位置抢走空枪归属）
+	for t in shoot.active_targets:
+		t.queue_free()
+	shoot.active_targets.clear()
+	await process_frame
 	tm.setup(0.2, cam.global_position + Vector3(0, 0, -8).rotated(Vector3.UP, deg_to_rad(20.0)), 0.8, Vector3.RIGHT)
 	ts.setup(0.2, cam.global_position + Vector3(0, 0, -8).rotated(Vector3.UP, deg_to_rad(20.0)))
 	shoot.active_targets.append(tm)

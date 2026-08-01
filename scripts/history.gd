@@ -105,14 +105,13 @@ func _show_detail(rec: Dictionary) -> void:
 	var total_targets := 0
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
-	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n命中率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次 · 多余开火 %d" % [
+	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n一次单击成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
 		float(rec.get("score_mean", 0.0)),
 		float(rec.get("score_low", 0.0)),
 		float(rec.get("score_high", 0.0)),
 		float(m.get("accuracy", 0.0)) * 100.0,
 		float(m.get("median_hit", 0.0)),
 		float(m.get("micro_adjusts", 0)) / float(maxf(total_targets, 1)),
-		int(m.get("wasted", 0)),
 	]
 	for child in detail_rows.get_children():
 		child.queue_free()
@@ -120,10 +119,10 @@ func _show_detail(rec: Dictionary) -> void:
 	detail_compare.text = _compare_text(rec)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
-	for text in ["轮次", "灵敏度", "命中率", "命中耗时(s)", "修正(s)", "多余开火"]:
+	for text in ["轮次", "灵敏度", "一次单击成功率", "命中耗时(s)", "失败点击", "超时"]:
 		var lab := Label.new()
 		lab.text = text
-		lab.custom_minimum_size = Vector2(120, 0)
+		lab.custom_minimum_size = Vector2(130, 0)
 		lab.modulate = Color(1, 0.27451, 0.333333)
 		header.add_child(lab)
 	detail_rows.add_child(header)
@@ -132,18 +131,18 @@ func _show_detail(rec: Dictionary) -> void:
 		row.add_theme_constant_override("separation", 16)
 		var targets := int(r.get("targets_done", 0))
 		var hit_times: Array = r.get("hit_times", [])
-		var corrections: Array = r.get("correction_times", [])
+		var hits := int(r.get("hits", 0))
 		for text in [
 			"%d" % int(r.get("round", 0)),
 			"%.2f" % float(r.get("sens", 0.0)),
-			"%d/%d" % [int(r.get("hits", 0)), targets],
+			"%.0f%%" % (100.0 * float(hits) / float(maxf(targets, 1))),
 			"%.2f" % TestMetrics.median(hit_times),
-			"%.2f" % TestMetrics.median(corrections),
-			"%d" % int(r.get("overshoots", 0)),
+			"%d" % int(r.get("misses", 0)),
+			"%d" % int(r.get("expired_angles", []).size()),
 		]:
 			var lab := Label.new()
 			lab.text = text
-			lab.custom_minimum_size = Vector2(120, 0)
+			lab.custom_minimum_size = Vector2(130, 0)
 			row.add_child(lab)
 		detail_rows.add_child(row)
 	detail_popup.visible = true

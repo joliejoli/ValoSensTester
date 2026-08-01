@@ -7,13 +7,10 @@ const TestPlan := preload("res://scripts/test_plan.gd")
 
 enum State { WARMUP, BANNER, ACTIVE, FINISHED }
 
-# 轨迹微调/空枪归属参数（附录 D P2：魔法数字提为常量）
+# 轨迹微调参数（附录 D P2：魔法数字提为常量）
 const AIM_ENTER_ANGLE := deg_to_rad(12.0)
 const AIM_TRACK_ANGLE := deg_to_rad(25.0)
 const AIM_MOTION_DEAD_ZONE := deg_to_rad(0.05)
-const MISS_ASSIGN_ANGLE := deg_to_rad(15.0)
-const MISS_ASSIGN_ANGLE_PRESSURE := deg_to_rad(8.0)
-const MISS_ASSIGN_ANGLE_MOVING := deg_to_rad(25.0)  # 移动靶跟丢/预判失误偏离大，放宽归属
 
 @onready var camera: Camera3D = %Camera
 @onready var target_root: Node3D = %TargetRoot
@@ -173,41 +170,44 @@ func _shoot() -> void:
 		round_data["shot_timestamps"].append((Time.get_ticks_msec() - round_start_ms) / 1000.0)
 	var ray := _cast_ray()
 	if ray.is_empty():
-		_record_miss_shot(Time.get_ticks_msec())
-		_on_miss()
+		_on_miss_click(Time.get_ticks_msec())
 		return
 	var col: Object = ray["collider"]
 	if col is Area3D:
 		var t: Node = col.get_parent()
-		if t.has_method("mark_shot"):
-			t.mark_shot(Time.get_ticks_msec())
+		if t.has_method("register_hit"):
 			t.register_hit()
 			hit_player.play()
 			crosshair.flash()
 			return
-	_record_miss_shot(Time.get_ticks_msec())
-	_on_miss()
+	_on_miss_click(Time.get_ticks_msec())
 
-# 打空枪：归属到准星方向最近的活动靶，
-# 使 first_shot_ms/微调耗时数据真实（否则 first_shot_ms=命中时刻，修正恒为 0）
-# 阈值按靶类型：静止 15°（PRESSURE 8°）/ 移动 25°（跟丢偏离大是常态）
-func _record_miss_shot(now_ms: int) -> void:
-	var forward := -camera.global_transform.basis.z
-	var best_target: Node3D = null
-	var best_ang := INF
-	for t in active_targets:
-		var dir := (t.global_position - camera.global_position).normalized()
-		var ang := acos(clampf(dir.dot(forward), -1.0, 1.0))
-		var limit := MISS_ASSIGN_ANGLE_MOVING if float(t.get("move_speed")) > 0.0 \
-			else (MISS_ASSIGN_ANGLE_PRESSURE if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else MISS_ASSIGN_ANGLE)
-		if ang < limit and ang < best_ang:
-			best_ang = ang
-			best_target = t
-	if best_target != null:
-		best_target.mark_shot(now_ms)
-
-func _on_miss() -> void:
+# 论文范式：每次单击一次判定。点击未命中 = 该次试验失败：
+# 单靶模式（标准/Flick/追踪）→ 最近靶立即失败消失（无补枪机会）；
+# 多靶模式（PRESSURE）→ 失败计数（靶保留，可继续被点击命中）
+func _on_miss_click(now_ms: int) -> void:
 	miss_player.play()
+	if state != State.ACTIVE:
+		return
+	if active_targets.is_empty():
+		return
+	round_data["misses"] = int(round_data.get("misses", 0)) + 1
+	if TestConfig.test_mode != TestConfig.TestMode.PRESSURE:
+		# 单靶模式：最近靶失败消失，进入下一靶
+		var closest: Node3D = null
+		var best := INF
+		for t in active_targets:
+			var ang := _angle_to_target(t)
+			if ang < best:
+				best = ang
+				closest = t
+		if closest != null:
+			# 失败靶的轨迹微调一并计入
+			round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(closest.micro_adjusts)
+			_despawn_target(closest)
+			targets_done += 1
+			_update_stats_ui()
+			_advance_round()
 
 func _cast_ray() -> Dictionary:
 	var space := get_world_3d().direct_space_state
@@ -336,13 +336,7 @@ func _on_target_hit(t: Node3D) -> void:
 		round_data["first_hit_time"] = dt
 	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
 	round_data["hit_angles"].append(float(t.angle_rad))
-	# 命中时刻（相对轮开始，切换效率数据源；Phase 6）
 	round_data["hit_timestamps"].append(dt)
-	# 越靶统计（复审 P0-5）：命中前多余开火数（含打空枪归属），无伪信号
-	round_data["overshoots"] = int(round_data.get("overshoots", 0)) + int(t.shots_against) - 1
-	# 一次性定位率：一枪命中的靶数
-	if int(t.shots_against) <= 1:
-		round_data["first_shot_hits"] = int(round_data.get("first_shot_hits", 0)) + 1
 	# 轨迹级微调（准星方向反转，与开火无关）
 	round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(t.micro_adjusts)
 	# 跟枪精度（移动靶）：准星停留/存活比例
@@ -350,10 +344,6 @@ func _on_target_hit(t: Node3D) -> void:
 		var lifetime := float(t.lifetime)
 		if lifetime > 0.1:
 			round_data["track_scores"].append(clampf(float(t.track_time) / lifetime, 0.0, 1.0))
-	var fsm: Variant = t.get("first_shot_ms")
-	if fsm != null and int(fsm) >= 0:
-		# 修正时间：该靶首次开火 → 命中的耗时（复审 P1-3，数组化避免只存最后一靶）
-		round_data["correction_times"].append((now_ms - int(fsm)) / 1000.0)
 	targets_done += 1
 	_update_stats_ui()
 	_advance_round()
@@ -406,8 +396,7 @@ func _start_round() -> void:
 		"sens": current_sens,
 		"shots": 0,
 		"hits": 0,
-		"overshoots": 0,
-		"first_shot_hits": 0,
+		"misses": 0,
 		"micro_adjusts": 0,
 		"track_scores": [],
 		"first_hit_time": 0.0,
@@ -417,7 +406,6 @@ func _start_round() -> void:
 		"hit_angles": [],
 		"hit_timestamps": [],
 		"expired_angles": [],
-		"correction_times": [],
 	}
 	shot_count = 0
 	hit_count = 0

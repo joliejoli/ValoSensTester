@@ -77,20 +77,20 @@ func _ready() -> void:
 	}
 	sample_label.text += " · %s" % mode_names.get(TestConfig.test_mode, "")
 	var m := TestMetrics.aggregate(rounds)
-	# 第 1 格：靶命中率（含超时惩罚）+ 开枪命中率（含空枪，直接反映打空枪）
-	metric_accuracy.text = "靶 %.1f%%\n枪 %.1f%%" % [m.accuracy * 100.0, m.shot_accuracy * 100.0]
+	# 第 1 格：一次单击成功率（每次单击一次判定：命中/失败/超时）
+	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
 	metric_hit_time.text = "%.2fs" % m.median_hit
 	var total_targets := 0
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
 	metric_correct.text = "%.1f" % (float(m.micro_adjusts) / float(maxf(total_targets, 1))) if total_targets > 0 else "--"
-	# 第 4 格：有跟枪数据（移动靶/追踪）显示跟枪精度，否则显示一次定位率
+	# 第 4 格：有跟枪数据（移动靶/追踪）显示跟枪精度，否则占位
 	if float(m.track_accuracy) >= 0.0:
 		metric_wasted_key.text = "跟枪精度（准星停留命中区）"
 		metric_wasted.text = "%.1f%%" % (m.track_accuracy * 100.0)
 	else:
-		metric_wasted_key.text = "一次定位率（第一枪命中）"
-		metric_wasted.text = "%.1f%%" % (m.first_shot_rate * 100.0)
+		metric_wasted_key.text = "单靶成功率（含超时）"
+		metric_wasted.text = "--"
 	metric_score.text = "%.2f" % (float(s.get("score_mean", 0.0)) if not is_consistency else m.score)
 	metric_rounds.text = "%d 轮" % rounds.size()
 	_build_page_chart()

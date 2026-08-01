@@ -4,16 +4,14 @@ extends RefCounted
 
 const Objective := preload("res://scripts/test_objective.gd")
 
-# 问题识别：返回 [{tag, title, detail}]（tag: overaim/slow_aim/low_acc/unstable/fast_unstable）
+# 问题识别：返回 [{tag, title, detail}]（tag: overaim/slow_aim/low_acc/unstable/fast_unstable/track）
 static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	var problems: Array = []
 	var targets := 0
 	for r in rounds:
 		targets += int(r.get("targets_done", 0))
-	var wasted_per := float(metrics.wasted) / float(maxf(targets, 1))
 	var acc := float(metrics.accuracy)
-	var correct := float(metrics.median_correct)
-	var first_rate := float(metrics.get("first_shot_rate", 0.0))
+	var eff := float(metrics.get("median_eff", 0.0))
 	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
 	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
 	# 跟枪精度（移动靶/追踪，-1 表示无移动靶数据）
@@ -38,37 +36,24 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 			"title": "瞄准微调偏多（准星来回摆动）",
 			"detail": "每靶平均准星反向调整 %.1f 次，准星到位后仍在反复确认，建议先慢速一停一打、再逐步提速。" % adjust_per,
 		})
-	if first_rate > 0.0 and first_rate < 0.55:
-		problems.append({
-			"tag": "overaim",
-			"title": "一次定位率偏低（需要多次修正）",
-			"detail": "第一枪命中率 %.0f%%，多数目标需要补枪修正，拉枪定位精度是主要瓶颈。" % (first_rate * 100.0),
-		})
-	if correct > 0.35 or wasted_per > 0.3:
-		problems.append({
-			"tag": "overaim",
-			"title": "瞄准修正偏多（过度瞄准）",
-			"detail": "中位修正耗时 %.2fs、每靶多余开火 %.2f 次，说明准星到位后仍在反复修正。" % [correct, wasted_per],
-		})
 	if acc < 0.75:
 		problems.append({
 			"tag": "slow_aim",
-			"title": "命中率偏低（时间压力/反应偏慢）",
-			"detail": "命中率 %.0f%%，部分目标可能 3s 超时。首次出手速度是主要瓶颈。" % (acc * 100.0),
+			"title": "命中率偏低（一次单击成功率）",
+			"detail": "一次单击成功率 %.0f%%，单击时准星经常不在目标上，拉枪定位精度是主要瓶颈。" % (acc * 100.0),
 		})
-	# 快慢判断用归一化耗时（t×sens/θ，轨迹效率，与 speed 得分口径一致；附录 D P1-2）
-	var eff := float(metrics.get("median_eff", 0.0))
+	# 快慢判断用归一化耗时（t×sens/θ，轨迹效率，与 score 口径一致）
 	if eff > 0.0 and acc >= 0.85 and eff > 0.6:
 		problems.append({
 			"tag": "slow_aim",
 			"title": "求稳但偏慢（微调能力需提升）",
-			"detail": "命中率 %.0f%% 但轨迹效率 %.2f（等效鼠标移动距离/角距），慢在最后一步微调。" % [acc * 100.0, eff],
+			"detail": "成功率 %.0f%% 但轨迹效率 %.2f（等效鼠标移动距离/角距），慢在最后一步微调。" % [acc * 100.0, eff],
 		})
 	if eff > 0.0 and eff < 0.35 and acc < 0.8:
 		problems.append({
 			"tag": "fast_unstable",
 			"title": "快而不稳",
-			"detail": "轨迹效率 %.2f 很快但命中率只有 %.0f%%，建议放慢节奏保证准星停稳再开枪。" % [eff, acc * 100.0],
+			"detail": "轨迹效率 %.2f 很快但成功率只有 %.0f%%，建议放慢节奏保证准星停稳再开枪。" % [eff, acc * 100.0],
 		})
 	var scores: Array = []
 	for r in rounds:
@@ -169,11 +154,10 @@ static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advi
 	var tg := 0
 	for r in rounds:
 		tg += int(r.get("targets_done", 0))
-	lines.append("命中率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次 · 多余开火 %d" % [
+	lines.append("一次单击成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
 		float(metrics.accuracy) * 100.0,
 		float(metrics.median_hit),
 		float(metrics.get("micro_adjusts", 0)) / float(maxf(tg, 1)),
-		int(metrics.wasted),
 	])
 	if problems.is_empty():
 		lines.append("建议：当前表现均衡，可在推荐灵敏度下继续巩固")

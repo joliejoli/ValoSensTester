@@ -166,7 +166,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
-text = "命中率（靶/开枪）"
+text = "一次单击成功率"
 horizontal_alignment = 1
 
 [node name="MetricAccuracy" type="Label" parent="Scroll/Center/VBox/Metrics/Box1/V1"]
@@ -239,7 +239,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
-text = "一次定位率（第一枪命中）"
+text = "单靶成功率（含超时）"
 horizontal_alignment = 1
 [node name="MetricWasted" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
 unique_name_in_owner = true
@@ -516,11 +516,11 @@ theme_override_constants/margin_bottom = 14
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
 theme_override_font_sizes/font_size = 13
-text = "【综合评分】= 50%准确率 + 30%速度 + 20%一致性（每轮 0~1 分）
-
-准确率 = 命中数 / (已出靶数 + 空枪数)（没中就是没中：打空枪与超时都算失败）
-速度 = 1 / (1+中位轨迹效率)，轨迹效率 = 耗时×灵敏度÷角距（一次到位≈1，来回修正>1）
-一致性 = 1 / (1+耗时波动)
+text = "【综合评分】= 平均每靶得分（0~1）
+每靶只允许一次单击判定：
+命中 → 按完成时间打分（1/(1+轨迹效率)，越快越高）
+未命中 / 超时 → 0 分（没中就是没中）
+成功率 = 命中 / (命中+失败点击+超时)
 
 【结果页曲线】
 灰点 = 每轮实测得分；粉线 = 预测得分曲线；红色阴影 = 95% 置信区间（越宽越不确定，两端为未测区域）
@@ -528,7 +528,7 @@ text = "【综合评分】= 50%准确率 + 30%速度 + 20%一致性（每轮 0~1
 
 【详细报告弹窗】
 图1 综合评分：同上放大版
-图2 命中率：命中率随灵敏度的变化（看准不准）
+图2 命中率：一次单击成功率随灵敏度的变化（看准不准）
 图3 学习曲线：每轮得分走势（波动大 = 状态不稳，结果可信度打折）"
 autowrap_mode = 2
 

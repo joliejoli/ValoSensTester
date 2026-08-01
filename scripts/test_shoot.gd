@@ -206,7 +206,10 @@ func _on_miss_click(now_ms: int) -> void:
 			best = ang
 			closest = t
 	if closest != null:
-		round_data["miss_times"].append((now_ms - int(closest.spawn_ms) - _paused_ms_total) / 1000.0)
+		# 失败耗时异常保护（同命中耗时：休眠/锁屏污染时剔除，避免虚增中位失败耗时）
+		var miss_time := (now_ms - int(closest.spawn_ms) - _paused_ms_total) / 1000.0
+		if miss_time <= float(TestConfig.TARGET_MAX_LIFETIME):
+			round_data["miss_times"].append(miss_time)
 		if TestConfig.test_mode != TestConfig.TestMode.PRESSURE:
 			# 单靶模式：失败靶的轨迹微调一并计入，失败靶消失推进
 			round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(closest.micro_adjusts)
@@ -329,6 +332,14 @@ func _despawn_target(t: Node3D) -> void:
 		t.queue_free()
 
 func _on_target_hit(t: Node3D) -> void:
+	# 先读取靶数据：_despawn_target 的对象池回收（reset_for_pool）会清零 spawn_ms/angle_rad
+	# 等字段，必须在回收前取值（否则命中耗时变成"引擎启动秒数"导致逐轮递增）
+	var spawn_ts := int(t.spawn_ms)
+	var angle_rad := float(t.angle_rad)
+	var move_speed := float(t.move_speed)
+	var micro := int(t.micro_adjusts)
+	var track := float(t.track_time)
+	var life := float(t.lifetime)
 	_despawn_target(t)
 	if state == State.WARMUP:
 		_advance_warmup()
@@ -340,25 +351,30 @@ func _on_target_hit(t: Node3D) -> void:
 	var dt := (now_ms - round_start_ms - _paused_ms_total) / 1000.0
 	if round_data.get("first_hit_time", 0.0) <= 0.0:
 		round_data["first_hit_time"] = dt
-	round_data["hit_times"].append((now_ms - int(t.spawn_ms) - _paused_ms_total) / 1000.0)
-	round_data["hit_angles"].append(float(t.angle_rad))
-	round_data["hit_timestamps"].append(dt)
-	# 轨迹级微调（准星方向反转，与开火无关）
-	round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(t.micro_adjusts)
-	# 跟枪精度（移动靶）：准星停留/存活比例
-	if float(t.move_speed) > 0.0:
-		var lifetime := float(t.lifetime)
-		if lifetime > 0.1:
-			round_data["track_scores"].append(clampf(float(t.track_time) / lifetime, 0.0, 1.0))
+	# 命中耗时异常保护：正常命中必 ≤ 超时上限（3s）；超过说明时间基准被外部污染
+	# （系统休眠/锁屏期间引擎计时继续走），该靶不计速度分（score 按 0 分），避免污染整轮评分
+	var hit_time := (now_ms - spawn_ts - _paused_ms_total) / 1000.0
+	if hit_time <= float(TestConfig.TARGET_MAX_LIFETIME):
+		round_data["hit_times"].append(hit_time)
+		round_data["hit_angles"].append(angle_rad)
+		round_data["hit_timestamps"].append(dt)
+		# 轨迹级微调（准星方向反转，与开火无关）
+		round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + micro
+		# 跟枪精度（移动靶）：准星停留/存活比例
+		if move_speed > 0.0:
+			if life > 0.1:
+				round_data["track_scores"].append(clampf(track / life, 0.0, 1.0))
 	targets_done += 1
 	_update_stats_ui()
 	_advance_round()
 
 func _on_target_expired(t: Node3D) -> void:
+	# 先读取（对象池回收会清零 angle_rad）
+	var angle_rad := float(t.angle_rad)
 	_despawn_target(t)
 	# 记录超时靶角度（一致性灵敏度方向分析数据源；Phase 6 补充）
 	if state == State.ACTIVE:
-		round_data["expired_angles"].append(float(t.angle_rad))
+		round_data["expired_angles"].append(angle_rad)
 	if state == State.WARMUP:
 		_advance_warmup()
 	elif state == State.ACTIVE:

@@ -26,6 +26,8 @@ func _init() -> void:
 	_test_chart()
 	await _test_micro_detect()
 	await _test_pause_time_exclusion()
+	await _test_hit_time_real()
+	await _test_abnormal_hit_time()
 	await _test_one_click_rule()
 	await _test_long_quota()
 	await _test_blind_sens()
@@ -250,6 +252,62 @@ func _test_pause_time_exclusion() -> void:
 	await process_frame
 	var ht := float(shoot.round_data["hit_times"][0])
 	_check("命中耗时不含暂停时长（<0.5s）", ht < 0.5, "ht=%.2f" % ht)
+
+# ---------- 真实命中耗时（对象池回收清零 spawn_ms 的 bug 回归） ----------
+
+func _test_hit_time_real() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	await physics_frame
+	shoot.set_process(false)
+	for t in shoot.active_targets:
+		t.free()
+	shoot.active_targets.clear()
+	shoot.state = 2
+	shoot.round_data = {"misses": 0, "micro_adjusts": 0, "hit_times": [], "hit_angles": [], "hit_timestamps": [], "track_scores": [], "shot_timestamps": [], "miss_times": []}
+	var cam: Camera3D = shoot.get_node("%Camera")
+	var t: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()
+	shoot.target_root.add_child(t)
+	await process_frame
+	await physics_frame
+	t.setup(0.2, cam.global_position + Vector3(0, 0, -8))
+	t.hit.connect(shoot._on_target_hit)
+	shoot.active_targets.append(t)
+	await physics_frame
+	t.register_hit()
+	await process_frame
+	# 引擎运行已 >3s：若命中耗时被清零 bug 污染（now-0），会被异常保护剔除 → 数组空
+	_check("命中耗时是真实差值（非引擎运行秒数）", not shoot.round_data["hit_times"].is_empty() and float(shoot.round_data["hit_times"][0]) < 3.0, "times=%s" % str(shoot.round_data["hit_times"]))
+
+# ---------- 异常命中耗时剔除（休眠/锁屏污染保护） ----------
+
+func _test_abnormal_hit_time() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	await physics_frame
+	shoot.set_process(false)
+	for t in shoot.active_targets:
+		t.free()
+	shoot.active_targets.clear()
+	shoot.state = 2
+	shoot.round_data = {"misses": 0, "micro_adjusts": 0, "hit_times": [], "hit_angles": [], "hit_timestamps": [], "track_scores": [], "shot_timestamps": [], "miss_times": []}
+	var cam: Camera3D = shoot.get_node("%Camera")
+	var t: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()
+	shoot.target_root.add_child(t)
+	await process_frame
+	await physics_frame
+	t.setup(0.2, cam.global_position + Vector3(0, 0, -8))
+	t.hit.connect(shoot._on_target_hit)
+	shoot.active_targets.append(t)
+	# 模拟休眠污染：把 spawn_ms 拨回 100 秒前
+	t.spawn_ms = Time.get_ticks_msec() - 100000
+	await physics_frame
+	t.register_hit()
+	await process_frame
+	_check("异常耗时（>3s）被剔除，不计速度分", shoot.round_data["hit_times"].is_empty(), "times=%s" % str(shoot.round_data["hit_times"]))
+	_check("剔除后命中仍计数", shoot.hit_count == 1 and shoot.targets_done == 1)
 
 # ---------- 一枪判定（论文范式） ----------
 

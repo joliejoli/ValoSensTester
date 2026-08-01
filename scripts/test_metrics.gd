@@ -13,6 +13,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 	var hit_times: Array = []
 	var corrections: Array = []
 	var eff_times: Array = []
+	var track_scores: Array = []
 	var score_sum := 0.0
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
@@ -30,12 +31,19 @@ static func aggregate(rounds: Array) -> Dictionary:
 			eff_times.append(float(times[i]) * sens / th)
 		hit_times.append_array(times)
 		corrections.append_array(r.get("correction_times", []))
+		track_scores.append_array(r.get("track_scores", []))
 		score_sum += Objective.score(r)
 	# 修正耗时只统计有微调的靶（>0），0 表示一枪命中不计入"微调时长"
 	var pos_corr: Array = []
 	for c in corrections:
 		if float(c) > 0.001:
 			pos_corr.append(c)
+	var track_acc := -1.0
+	if not track_scores.is_empty():
+		var s_sum := 0.0
+		for s in track_scores:
+			s_sum += float(s)
+		track_acc = s_sum / float(track_scores.size())
 	return {
 		"accuracy": float(total_hits) / float(total_targets) if total_targets > 0 else 0.0,
 		"first_shot_rate": float(first_shot) / float(total_targets) if total_targets > 0 else 0.0,
@@ -44,6 +52,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 		"median_correct": median(pos_corr),
 		"wasted": total_wasted,
 		"micro_adjusts": micro,
+		"track_accuracy": track_acc,
 		"score": score_sum / float(rounds.size()) if not rounds.is_empty() else 0.0,
 	}
 

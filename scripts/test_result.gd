@@ -22,6 +22,7 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var metric_hit_time: Label = %MetricHitTime
 @onready var metric_correct: Label = %MetricCorrect
 @onready var metric_wasted: Label = %MetricWasted
+@onready var metric_wasted_key: Label = %MetricWastedKey
 @onready var metric_score: Label = %MetricScore
 @onready var metric_rounds: Label = %MetricRounds
 @onready var history_hint: Label = %HistoryHint
@@ -69,7 +70,13 @@ func _ready() -> void:
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
 	metric_correct.text = "%.1f" % (float(m.micro_adjusts) / float(maxf(total_targets, 1))) if total_targets > 0 else "--"
-	metric_wasted.text = "%.1f%%" % (m.first_shot_rate * 100.0)
+	# 第 4 格：有跟枪数据（移动靶/追踪）显示跟枪精度，否则显示一次定位率
+	if float(m.track_accuracy) >= 0.0:
+		metric_wasted_key.text = "跟枪精度（准星停留命中区）"
+		metric_wasted.text = "%.1f%%" % (m.track_accuracy * 100.0)
+	else:
+		metric_wasted_key.text = "一次定位率（第一枪命中）"
+		metric_wasted.text = "%.1f%%" % (m.first_shot_rate * 100.0)
 	metric_score.text = "%.2f" % (float(s.get("score_mean", 0.0)) if not is_consistency else m.score)
 	metric_rounds.text = "%d 轮" % rounds.size()
 	_build_page_chart()

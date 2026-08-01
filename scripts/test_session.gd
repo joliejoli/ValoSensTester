@@ -114,10 +114,3 @@ func toggle_fullscreen() -> void:
 	else:
 		win.borderless = false
 		win.mode = Window.MODE_WINDOWED
-
-# 返回第 round_index 轮（0 起）使用的灵敏度（Phase 4 已由 test_plan.gd 接管；
-# 保留给 Consistency 模式与退化路径引用）
-func get_round_sens(round_index: int) -> float:
-	if test_type == TestType.CONSISTENCY or rounds <= 1:
-		return (sens_min + sens_max) / 2.0
-	return lerpf(sens_min, sens_max, float(round_index) / float(rounds - 1))

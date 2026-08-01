@@ -16,6 +16,14 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	var first_rate := float(metrics.get("first_shot_rate", 0.0))
 	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
 	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
+	# 跟枪精度（移动靶/追踪，-1 表示无移动靶数据）
+	var track_acc := float(metrics.get("track_accuracy", -1.0))
+	if track_acc >= 0.0 and track_acc < 0.6:
+		problems.append({
+			"tag": "track",
+			"title": "跟枪精度不足",
+			"detail": "准星停留在靶心命中区内的时间仅 %.0f%%，移动目标跟枪不够稳定。" % (track_acc * 100.0),
+		})
 	if adjust_per > 2.5:
 		problems.append({
 			"tag": "overaim",
@@ -81,6 +89,8 @@ static func train_advice(problems: Array) -> Array:
 		match p["tag"]:
 			"overaim":
 				advice.append("预瞄练习：把准星停在靶心再开枪，先慢后快（训练后命中前空枪应逐步减少）")
+			"track":
+				advice.append("跟枪练习：在移动靶上保持准星贴住靶心移动，从慢速目标开始逐步提速")
 			"slow_aim":
 				advice.append("快速拉枪练习：用大角度靶反复练习一枪到位，再逐步缩小靶子")
 			"fast_unstable":

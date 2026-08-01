@@ -7,6 +7,13 @@ const TestPlan := preload("res://scripts/test_plan.gd")
 
 enum State { WARMUP, BANNER, ACTIVE, FINISHED }
 
+# 轨迹微调/空枪归属参数（附录 D P2：魔法数字提为常量）
+const AIM_ENTER_ANGLE := deg_to_rad(12.0)
+const AIM_TRACK_ANGLE := deg_to_rad(25.0)
+const AIM_MOTION_DEAD_ZONE := deg_to_rad(0.05)
+const MISS_ASSIGN_ANGLE := deg_to_rad(15.0)
+const MISS_ASSIGN_ANGLE_PRESSURE := deg_to_rad(8.0)
+
 @onready var camera: Camera3D = %Camera
 @onready var target_root: Node3D = %TargetRoot
 @onready var crosshair: Control = %Crosshair
@@ -97,6 +104,18 @@ func _process(_delta: float) -> void:
 			_spawn_round_targets()
 	if state == State.WARMUP or state == State.ACTIVE:
 		_update_micro_adjust_detection()
+		_update_track_time(get_process_delta_time())
+
+# 跟枪精度（附录 D P2）：每帧对移动靶累计"准星在命中区内"的停留时间，
+# 命中时按 停留/存活 比例计入轮数据（追踪/移动靶模式的独立评估维度）
+func _update_track_time(delta: float) -> void:
+	for t in active_targets:
+		if float(t.get("move_speed")) <= 0.0:
+			continue
+		var ang := _angle_to_target(t)
+		var hit_angle := atan(float(t.get("radius")) / TestConfig.TARGET_DISTANCE)
+		if ang < hit_angle:
+			t.track_time += delta
 
 # 轨迹级微调检测（手测反馈：不开火玩家无空枪数据，微调指标失真）：
 # 跟踪准星方向的每帧变化符号，对最近目标靶累计"方向反转"次数（来回摆动），与是否开火无关
@@ -106,12 +125,12 @@ func _update_micro_adjust_detection() -> void:
 	_last_yaw = _yaw
 	_last_pitch = _pitch
 	# 死区：小于 0.05°/帧视为静止，排除像素级抖动
-	if absf(yaw_delta) < deg_to_rad(0.05) and absf(pitch_delta) < deg_to_rad(0.05):
+	if absf(yaw_delta) < AIM_MOTION_DEAD_ZONE and absf(pitch_delta) < AIM_MOTION_DEAD_ZONE:
 		return
 	var yaw_sign := signf(yaw_delta)
 	var pitch_sign := signf(pitch_delta)
 	var closest: Node3D = null
-	var best := deg_to_rad(25.0)
+	var best := AIM_TRACK_ANGLE
 	for t in active_targets:
 		# 移动靶/追踪：追枪反转是跟随修正不是定位微调（附录 D P1-1），不计入
 		if float(t.get("move_speed")) > 0.0:
@@ -122,7 +141,7 @@ func _update_micro_adjust_detection() -> void:
 			closest = t
 	if closest == null:
 		return
-	var entered := best < deg_to_rad(12.0)
+	var entered := best < AIM_ENTER_ANGLE
 	var rev := 0
 	if entered:
 		# 首次进入瞄准区只记录方向，不计数（附录 D P0-2：初始符号 0 会误计 1 次）
@@ -166,10 +185,10 @@ func _shoot() -> void:
 
 # 打空枪：归属到准星方向最近的活动靶，
 # 使 first_shot_ms/微调耗时数据真实（否则 first_shot_ms=命中时刻，修正恒为 0）
-# 多目标（PRESSURE）时归属不可靠，阈值收紧至 8°（附录 D P1-4）
+# 多目标（PRESSURE）时归属不可靠，阈值收紧（附录 D P1-4）
 func _record_miss_shot(now_ms: int) -> void:
 	var forward := -camera.global_transform.basis.z
-	var best_ang := deg_to_rad(8.0 if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else 15.0)
+	var best_ang := MISS_ASSIGN_ANGLE_PRESSURE if TestConfig.test_mode == TestConfig.TestMode.PRESSURE else MISS_ASSIGN_ANGLE
 	var best_target: Node3D = null
 	for t in active_targets:
 		var dir := (t.global_position - camera.global_position).normalized()
@@ -296,6 +315,11 @@ func _on_target_hit(t: Node3D) -> void:
 		round_data["first_shot_hits"] = int(round_data.get("first_shot_hits", 0)) + 1
 	# 轨迹级微调（准星方向反转，与开火无关）
 	round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(t.micro_adjusts)
+	# 跟枪精度（移动靶）：准星停留/存活比例
+	if float(t.move_speed) > 0.0:
+		var lifetime := float(t.lifetime)
+		if lifetime > 0.1:
+			round_data["track_scores"].append(clampf(float(t.track_time) / lifetime, 0.0, 1.0))
 	var fsm: Variant = t.get("first_shot_ms")
 	if fsm != null and int(fsm) >= 0:
 		# 修正时间：该靶首次开火 → 命中的耗时（复审 P1-3，数组化避免只存最后一靶）
@@ -352,6 +376,7 @@ func _start_round() -> void:
 		"overshoots": 0,
 		"first_shot_hits": 0,
 		"micro_adjusts": 0,
+		"track_scores": [],
 		"first_hit_time": 0.0,
 		"total_time_ms": 0,
 		"shot_timestamps": [],

@@ -4,6 +4,7 @@ extends Control
 
 const HistoryStore := preload("res://scripts/history_store.gd")
 const Chart := preload("res://scripts/chart.gd")
+const TestMetrics := preload("res://scripts/test_metrics.gd")
 
 const TYPE_LABEL := {
 	"PSA": "灵敏度测试",
@@ -18,6 +19,7 @@ const TYPE_LABEL := {
 @onready var detail_rec: Label = %DetailRec
 @onready var detail_meta: Label = %DetailMeta
 @onready var detail_metrics: Label = %DetailMetrics
+@onready var detail_compare: Label = %DetailCompare
 @onready var detail_rows: VBoxContainer = %DetailRows
 @onready var trend_popup: Control = %TrendPopup
 @onready var trend_box: VBoxContainer = %TrendBox
@@ -114,6 +116,8 @@ func _show_detail(rec: Dictionary) -> void:
 	]
 	for child in detail_rows.get_children():
 		child.queue_free()
+	# 与上一次同类型测试对比（附录 D P2）
+	detail_compare.text = _compare_text(rec)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
 	for text in ["轮次", "灵敏度", "命中率", "命中耗时(s)", "修正(s)", "多余开火"]:
@@ -133,8 +137,8 @@ func _show_detail(rec: Dictionary) -> void:
 			"%d" % int(r.get("round", 0)),
 			"%.2f" % float(r.get("sens", 0.0)),
 			"%d/%d" % [int(r.get("hits", 0)), targets],
-			"%.2f" % _median(hit_times),
-			"%.2f" % _median(corrections),
+			"%.2f" % TestMetrics.median(hit_times),
+			"%.2f" % TestMetrics.median(corrections),
 			"%d" % int(r.get("overshoots", 0)),
 		]:
 			var lab := Label.new()
@@ -196,15 +200,45 @@ func _on_trend_pressed() -> void:
 func _on_close_trend_pressed() -> void:
 	trend_popup.visible = false
 
-func _median(values: Array) -> float:
-	if values.is_empty():
-		return 0.0
-	var sorted := values.duplicate()
-	sorted.sort()
-	var n := sorted.size()
-	if n % 2 == 1:
-		return float(sorted[n / 2])
-	return (float(sorted[n / 2 - 1]) + float(sorted[n / 2])) * 0.5
+# 与上一次同类型测试的对比文本（灵敏度/得分/命中率/每靶微调，↑↓→ 标注变化）
+func _compare_text(rec: Dictionary) -> String:
+	var cur_ts := int(rec.get("ts", 0))
+	var prev_ts := 0
+	var prev: Dictionary = {}
+	for other in _records:
+		var ot := int(other.get("ts", 0))
+		if other.get("type", "") == rec.get("type", "") and ot < cur_ts and ot > prev_ts:
+			prev_ts = ot
+			prev = other
+	if prev.is_empty():
+		return "（这是同类型测试的第一条记录，暂无对比）"
+	var prev_m: Dictionary = prev.get("metrics", {})
+	var cur_m: Dictionary = rec.get("metrics", {})
+	var prev_targets := 0
+	var cur_targets := 0
+	for r in prev.get("round_results", []):
+		prev_targets += int(r.get("targets_done", 0))
+	for r in rec.get("round_results", []):
+		cur_targets += int(r.get("targets_done", 0))
+	return "对比上一次 %s（%s）：\n灵敏度 %s · 得分 %s · 命中率 %s · 每靶微调 %s" % [
+		TYPE_LABEL.get(rec.get("type", ""), ""),
+		HistoryStore.format_date(prev_ts),
+		_arrow(float(prev.get("sens", 0.0)), float(rec.get("sens", 0.0)), "%.2f"),
+		_arrow(float(prev.get("score_mean", 0.0)), float(rec.get("score_mean", 0.0)), "%.2f"),
+		_arrow(float(prev_m.get("accuracy", 0.0)) * 100.0, float(cur_m.get("accuracy", 0.0)) * 100.0, "%.1f%%"),
+		_arrow(
+			float(prev_m.get("micro_adjusts", 0)) / float(maxf(prev_targets, 1)),
+			float(cur_m.get("micro_adjusts", 0)) / float(maxf(cur_targets, 1)),
+			"%.1f"),
+	]
+
+# 变化箭头：本次 < 上次 → ↓，本次 > 上次 → ↑，接近 → →（微调次数是越低越好，单独反转）
+static func _arrow(prev: float, cur: float, fmt: String) -> String:
+	var diff := cur - prev
+	var arrow := "→"
+	if absf(diff) > 0.005:
+		arrow = "↑" if diff > 0.0 else "↓"
+	return "%s %s" % [fmt % cur, arrow]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

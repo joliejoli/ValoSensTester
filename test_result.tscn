@@ -215,13 +215,13 @@ layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K4" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
+[node name="MetricWastedKey" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "一次定位率（第一枪命中）"
 horizontal_alignment = 1
-
 [node name="MetricWasted" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
 unique_name_in_owner = true
 layout_mode = 2

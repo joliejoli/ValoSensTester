@@ -21,6 +21,8 @@ var micro_adjusts := 0
 var _aim_yaw_sign := 0.0
 var _aim_pitch_sign := 0.0
 var _aim_entered := false
+# 跟枪精度：准星停留在命中区内的时间（移动靶；由 test_shoot 每帧累计）
+var track_time := 0.0
 
 var _sprite: Sprite3D
 var _area: Area3D

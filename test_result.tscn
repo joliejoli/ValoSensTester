@@ -420,6 +420,7 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="TableBox" type="VBoxContainer" parent="ReportPopup/Center/Card/Margin/VBox/PanelTable"]
 unique_name_in_owner = true

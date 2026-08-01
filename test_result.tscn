@@ -49,6 +49,8 @@ title_text = "测试结果"
 
 [node name="HelpButton" type="Button" parent="."]
 unique_name_in_owner = true
+visible = true
+z_index = 10
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0

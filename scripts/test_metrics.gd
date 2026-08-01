@@ -9,6 +9,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 	var total_hits := 0
 	var total_wasted := 0
 	var first_shot := 0
+	var micro := 0
 	var hit_times: Array = []
 	var corrections: Array = []
 	var score_sum := 0.0
@@ -17,6 +18,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 		total_hits += int(r.get("hits", 0))
 		total_wasted += int(r.get("overshoots", 0))
 		first_shot += int(r.get("first_shot_hits", 0))
+		micro += int(r.get("micro_adjusts", 0))
 		hit_times.append_array(r.get("hit_times", []))
 		corrections.append_array(r.get("correction_times", []))
 		score_sum += Objective.score(r)
@@ -31,6 +33,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 		"median_hit": median(hit_times),
 		"median_correct": median(pos_corr),
 		"wasted": total_wasted,
+		"micro_adjusts": micro,
 		"score": score_sum / float(rounds.size()) if not rounds.is_empty() else 0.0,
 	}
 

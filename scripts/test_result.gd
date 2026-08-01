@@ -66,7 +66,10 @@ func _ready() -> void:
 	var m := TestMetrics.aggregate(rounds)
 	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
 	metric_hit_time.text = "%.2fs" % m.median_hit
-	metric_correct.text = "%.2fs" % m.median_correct
+	var total_targets := 0
+	for r in rounds:
+		total_targets += int(r.get("targets_done", 0))
+	metric_correct.text = "%.1f" % (float(m.micro_adjusts) / float(maxf(total_targets, 1))) if total_targets > 0 else "--"
 	metric_wasted.text = "%.1f%%" % (m.first_shot_rate * 100.0)
 	metric_score.text = "%.2f" % (float(s.get("score_mean", 0.0)) if not is_consistency else m.score)
 	metric_rounds.text = "%d 轮" % rounds.size()

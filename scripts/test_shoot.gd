@@ -39,6 +39,8 @@ var warmup_done := 0
 var shot_count := 0
 var hit_count := 0
 var round_start_ms := 0
+var _last_yaw := 0.0
+var _last_pitch := 0.0
 
 var active_targets: Array[Node3D] = []
 var round_data: Dictionary = {}
@@ -93,6 +95,45 @@ func _process(_delta: float) -> void:
 		# 面向回正后自动补生成（转身暂停生成时的重试）
 		if active_targets.is_empty() and targets_done < TestConfig.TARGETS_PER_ROUND:
 			_spawn_round_targets()
+	if state == State.WARMUP or state == State.ACTIVE:
+		_update_micro_adjust_detection()
+
+# 轨迹级微调检测（手测反馈：不开火玩家无空枪数据，微调指标失真）：
+# 跟踪准星方向的每帧变化符号，对最近目标靶累计"方向反转"次数（来回摆动），与是否开火无关
+func _update_micro_adjust_detection() -> void:
+	var yaw_delta := _yaw - _last_yaw
+	var pitch_delta := _pitch - _last_pitch
+	_last_yaw = _yaw
+	_last_pitch = _pitch
+	# 死区：小于 0.05°/帧视为静止，排除像素级抖动
+	if absf(yaw_delta) < deg_to_rad(0.05) and absf(pitch_delta) < deg_to_rad(0.05):
+		return
+	var yaw_sign := signf(yaw_delta)
+	var pitch_sign := signf(pitch_delta)
+	var closest: Node3D = null
+	var best := deg_to_rad(25.0)
+	for t in active_targets:
+		var ang := _angle_to_target(t)
+		if ang < best:
+			best = ang
+			closest = t
+	if closest == null:
+		return
+	var entered := best < deg_to_rad(12.0)
+	var rev := 0
+	if entered:
+		if int(yaw_sign) != 0 and int(yaw_sign) != int(closest._aim_yaw_sign):
+			rev += 1
+		if int(pitch_sign) != 0 and int(pitch_sign) != int(closest._aim_pitch_sign):
+			rev += 1
+	closest._aim_yaw_sign = yaw_sign if entered else 0.0
+	closest._aim_pitch_sign = pitch_sign if entered else 0.0
+	closest.micro_adjusts += rev
+
+func _angle_to_target(t: Node3D) -> float:
+	var forward := -camera.global_transform.basis.z
+	var dir := (t.global_position - camera.global_position).normalized()
+	return acos(clampf(dir.dot(forward), -1.0, 1.0))
 
 func _shoot() -> void:
 	shot_player.play()
@@ -242,6 +283,8 @@ func _on_target_hit(t: Node3D) -> void:
 	# 一次性定位率：一枪命中的靶数
 	if int(t.shots_against) <= 1:
 		round_data["first_shot_hits"] = int(round_data.get("first_shot_hits", 0)) + 1
+	# 轨迹级微调（准星方向反转，与开火无关）
+	round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(t.micro_adjusts)
 	var fsm: Variant = t.get("first_shot_ms")
 	if fsm != null and int(fsm) >= 0:
 		# 修正时间：该靶首次开火 → 命中的耗时（复审 P1-3，数组化避免只存最后一靶）
@@ -297,6 +340,7 @@ func _start_round() -> void:
 		"hits": 0,
 		"overshoots": 0,
 		"first_shot_hits": 0,
+		"micro_adjusts": 0,
 		"first_hit_time": 0.0,
 		"total_time_ms": 0,
 		"shot_timestamps": [],

@@ -15,6 +15,14 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	var hit := float(metrics.median_hit)
 	var correct := float(metrics.median_correct)
 	var first_rate := float(metrics.get("first_shot_rate", 0.0))
+	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
+	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
+	if adjust_per > 2.5:
+		problems.append({
+			"tag": "overaim",
+			"title": "瞄准微调偏多（准星来回摆动）",
+			"detail": "每靶平均准星反向调整 %.1f 次，准星到位后仍在反复确认，建议先慢速一停一打、再逐步提速。" % adjust_per,
+		})
 	if first_rate > 0.0 and first_rate < 0.55:
 		problems.append({
 			"tag": "overaim",
@@ -102,10 +110,13 @@ static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advi
 		float(s.get("score_low", 0.0)),
 		float(s.get("score_high", 0.0)),
 	])
-	lines.append("命中率 %.1f%% · 中位命中 %.2fs · 中位修正 %.2fs · 多余开火 %d" % [
+	var tg := 0
+	for r in rounds:
+		tg += int(r.get("targets_done", 0))
+	lines.append("命中率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次 · 多余开火 %d" % [
 		float(metrics.accuracy) * 100.0,
 		float(metrics.median_hit),
-		float(metrics.median_correct),
+		float(metrics.get("micro_adjusts", 0)) / float(maxf(tg, 1)),
 		int(metrics.wasted),
 	])
 	if problems.is_empty():

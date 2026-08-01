@@ -14,8 +14,12 @@ var first_shot_ms := -1
 var lifetime := 0.0
 var max_lifetime := 6.0
 var spawn_ms := 0
-# 生成时相对相机初始朝向的角距（弧度），speed 归一化分母（Phase 4.5 复审 P0-3）
+# 生成时相对相机初始朝向的角距（弧度），speed 归一化分母（复审 P0-3）
 var angle_rad := 0.0
+# 瞄准过程中的准星方向反转次数（轨迹级微调，与是否开火无关；由 test_shoot 每帧更新）
+var micro_adjusts := 0
+var _aim_yaw_sign := 0.0
+var _aim_pitch_sign := 0.0
 
 var _sprite: Sprite3D
 var _area: Area3D

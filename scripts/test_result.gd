@@ -106,7 +106,8 @@ func _build_page_chart() -> void:
 	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
 	var c1 := Chart.new()
 	c1.title = "灵敏度-综合评分（阴影 = 95% 置信区间）"
-	c1.y_limits = Vector2(0, 1)
+	# y 轴自适应：命中慢的轮 score 会贴底（0-1 固定轴下难以看清真实差异），按数据范围缩放
+	c1.y_auto = true
 	c1.custom_minimum_size = Vector2(0, 160)
 	if not is_consistency and not rounds.is_empty():
 		# x 轴固定为灵敏度配置范围（折线位置符合预期，与轴标签对应）
@@ -242,7 +243,7 @@ func _build_charts() -> void:
 	# 1) 灵敏度-综合评分：GP 后验均值 + 95% CI 带 + 实测散点
 	var c1 := Chart.new()
 	c1.title = "灵敏度-综合评分（GP 后验，阴影 = 95% CI）"
-	c1.y_limits = Vector2(0, 1)
+	c1.y_auto = true
 	c1.custom_minimum_size = Vector2(0, 190)
 	if not is_consistency and not rounds.is_empty():
 		var curve := _gp_curve(rounds)

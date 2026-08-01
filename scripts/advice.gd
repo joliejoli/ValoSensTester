@@ -48,8 +48,8 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	if acc < 0.75:
 		problems.append({
 			"tag": "slow_aim",
-			"title": "命中率偏低（一次单击成功率）",
-			"detail": "一次单击成功率 %.0f%%，单击时准星经常不在目标上，拉枪定位精度是主要瓶颈。" % (acc * 100.0),
+			"title": "命中率偏低（成功率）",
+			"detail": "成功率 %.0f%%，单击时准星经常不在目标上，拉枪定位精度是主要瓶颈。" % (acc * 100.0),
 		})
 	# 快慢判断用归一化耗时（t×sens/θ，轨迹效率，与 score 口径一致）
 	if eff > 0.0 and acc >= 0.85 and eff > 0.6:
@@ -176,7 +176,7 @@ static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advi
 	var tg := 0
 	for r in rounds:
 		tg += int(r.get("targets_done", 0))
-	lines.append("一次单击成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
+	lines.append("成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
 		float(metrics.accuracy) * 100.0,
 		float(metrics.median_hit),
 		float(metrics.get("micro_adjusts", 0)) / float(maxf(tg, 1)),

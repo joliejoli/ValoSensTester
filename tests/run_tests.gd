@@ -25,6 +25,7 @@ func _init() -> void:
 	_test_history_store()
 	_test_chart()
 	await _test_micro_detect()
+	await _test_pause_time_exclusion()
 	await _test_one_click_rule()
 	await _test_long_quota()
 	await _test_blind_sens()
@@ -218,6 +219,37 @@ func _test_micro_detect() -> void:
 	var before := int(t.micro_adjusts)
 	shoot._update_micro_adjust_detection()
 	_check("微调静止帧不计", int(t.micro_adjusts) == before)
+
+# ---------- 暂停不污染命中耗时（评分 0 bug 根因） ----------
+
+func _test_pause_time_exclusion() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	await physics_frame
+	shoot.set_process(false)
+	for t in shoot.active_targets:
+		t.free()
+	shoot.active_targets.clear()
+	shoot.state = 2
+	shoot.round_data = {"misses": 0, "micro_adjusts": 0, "hit_times": [], "hit_angles": [], "hit_timestamps": [], "track_scores": [], "shot_timestamps": [], "miss_times": []}
+	var cam: Camera3D = shoot.get_node("%Camera")
+	var t: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()
+	shoot.target_root.add_child(t)
+	await process_frame
+	await physics_frame
+	t.setup(0.2, cam.global_position + Vector3(0, 0, -8))
+	t.hit.connect(shoot._on_target_hit)
+	shoot.active_targets.append(t)
+	await physics_frame
+	# 暂停 0.3 秒（create_timer 默认忽略暂停继续计时）
+	shoot._toggle_pause()
+	await create_timer(0.3).timeout
+	shoot._toggle_pause()
+	t.register_hit()
+	await process_frame
+	var ht := float(shoot.round_data["hit_times"][0])
+	_check("命中耗时不含暂停时长（<0.5s）", ht < 0.5, "ht=%.2f" % ht)
 
 # ---------- 一枪判定（论文范式） ----------
 

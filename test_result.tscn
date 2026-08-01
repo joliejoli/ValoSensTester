@@ -166,7 +166,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
-text = "一次单击成功率"
+text = "成功率"
 horizontal_alignment = 1
 
 [node name="MetricAccuracy" type="Label" parent="Scroll/Center/VBox/Metrics/Box1/V1"]
@@ -528,7 +528,7 @@ text = "【综合评分】= 平均每靶得分（0~1）
 
 【详细报告弹窗】
 图1 综合评分：同上放大版
-图2 命中率：一次单击成功率随灵敏度的变化（看准不准）
+图2 命中率：成功率随灵敏度的变化（看准不准）
 图3 学习曲线：每轮得分走势（波动大 = 状态不稳，结果可信度打折）"
 autowrap_mode = 2
 

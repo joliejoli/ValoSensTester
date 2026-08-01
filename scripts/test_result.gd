@@ -77,7 +77,7 @@ func _ready() -> void:
 	}
 	sample_label.text += " · %s" % mode_names.get(TestConfig.test_mode, "")
 	var m := TestMetrics.aggregate(rounds)
-	# 第 1 格：一次单击成功率（每次单击一次判定：命中/失败/超时）
+	# 第 1 格：成功率（每次单击一次判定：命中/失败/超时）
 	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
 	metric_hit_time.text = "%.2fs" % m.median_hit
 	var total_targets := 0

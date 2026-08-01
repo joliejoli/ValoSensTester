@@ -105,7 +105,7 @@ func _show_detail(rec: Dictionary) -> void:
 	var total_targets := 0
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
-	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n一次单击成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
+	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
 		float(rec.get("score_mean", 0.0)),
 		float(rec.get("score_low", 0.0)),
 		float(rec.get("score_high", 0.0)),
@@ -119,7 +119,7 @@ func _show_detail(rec: Dictionary) -> void:
 	detail_compare.text = _compare_text(rec)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
-	for text in ["轮次", "灵敏度", "一次单击成功率", "命中耗时(s)", "失败点击", "超时"]:
+	for text in ["轮次", "灵敏度", "成功率", "命中耗时(s)", "失败点击", "超时"]:
 		var lab := Label.new()
 		lab.text = text
 		lab.custom_minimum_size = Vector2(130, 0)

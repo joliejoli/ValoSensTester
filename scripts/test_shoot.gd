@@ -47,6 +47,10 @@ var hit_count := 0
 var round_start_ms := 0
 var _last_yaw := 0.0
 var _last_pitch := 0.0
+# 暂停累计毫秒：暂停期间目标存活计时暂停但绝对时间仍在流逝，
+# 命中耗时/命中时刻需扣除暂停时长（否则暂停后命中耗时虚增到秒级，score 塌陷）
+var _paused_ms_total := 0
+var _pause_start_ms := -1
 
 var active_targets: Array[Node3D] = []
 var round_data: Dictionary = {}
@@ -202,7 +206,7 @@ func _on_miss_click(now_ms: int) -> void:
 			best = ang
 			closest = t
 	if closest != null:
-		round_data["miss_times"].append((now_ms - int(closest.spawn_ms)) / 1000.0)
+		round_data["miss_times"].append((now_ms - int(closest.spawn_ms) - _paused_ms_total) / 1000.0)
 		if TestConfig.test_mode != TestConfig.TestMode.PRESSURE:
 			# 单靶模式：失败靶的轨迹微调一并计入，失败靶消失推进
 			round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(closest.micro_adjusts)
@@ -333,10 +337,10 @@ func _on_target_hit(t: Node3D) -> void:
 		return
 	hit_count += 1
 	var now_ms := Time.get_ticks_msec()
-	var dt := (now_ms - round_start_ms) / 1000.0
+	var dt := (now_ms - round_start_ms - _paused_ms_total) / 1000.0
 	if round_data.get("first_hit_time", 0.0) <= 0.0:
 		round_data["first_hit_time"] = dt
-	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
+	round_data["hit_times"].append((now_ms - int(t.spawn_ms) - _paused_ms_total) / 1000.0)
 	round_data["hit_angles"].append(float(t.angle_rad))
 	round_data["hit_timestamps"].append(dt)
 	# 轨迹级微调（准星方向反转，与开火无关）
@@ -414,6 +418,8 @@ func _start_round() -> void:
 	hit_count = 0
 	targets_spawned = 0
 	targets_done = 0
+	_paused_ms_total = 0
+	_pause_start_ms = -1
 	# 长距固定配额：12 个位置随机选 4 个做长距（附录 E P0）
 	_long_positions.clear()
 	var positions: Array[int] = []
@@ -545,6 +551,12 @@ func _toggle_pause() -> void:
 	get_tree().paused = paused
 	pause_menu.visible = paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED
+	if paused:
+		_pause_start_ms = Time.get_ticks_msec()
+	else:
+		if _pause_start_ms >= 0:
+			_paused_ms_total += Time.get_ticks_msec() - _pause_start_ms
+			_pause_start_ms = -1
 	if paused:
 		match state:
 			State.WARMUP:

@@ -332,6 +332,7 @@ func _build_opt_summary() -> Dictionary:
 		"score_mean": mean,
 		"score_low": low,
 		"score_high": high,
+		"flat": est.get("flat", false),
 		"mode_label": _mode_label(sens),
 		"dpi": TestConfig.get_dpi(),
 		"edpi": snappedf(sens * TestConfig.get_dpi(), 1.0),
@@ -391,6 +392,16 @@ func _toggle_pause() -> void:
 	get_tree().paused = paused
 	pause_menu.visible = paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED
+	if paused:
+		match state:
+			State.WARMUP:
+				%PauseStateLabel.text = "热身阶段"
+			State.BANNER:
+				%PauseStateLabel.text = "轮次准备中（即将开始）"
+			State.ACTIVE:
+				%PauseStateLabel.text = "第 %d/%d 轮进行中" % [round_index + 1, TestConfig.rounds]
+			_:
+				%PauseStateLabel.text = ""
 
 func _on_resume_button_pressed() -> void:
 	_toggle_pause()

@@ -66,13 +66,29 @@ func add_result(round_data: Dictionary) -> void:
 		_bo.add_sample(sens, Objective.score(round_data))
 
 # GP 预测当前最佳灵敏度（测试结束调用，未采样时返回中点）
+# 平坦检测（手测反馈）：已测点得分范围 < 0.08（信号弱于单轮噪声 σ_n=0.12）时，
+# 推荐改为实测最高分点，避免探索偏好把推荐推到边缘（如 0.2），并标记 flat
 func best_estimate() -> Dictionary:
 	if _bo.sample_count() == 0:
 		var mid := (_sens_min + _sens_max) / 2.0
-		return {"sens": mid, "mean": 0.0, "variance": 0.0}
+		return {"sens": mid, "mean": 0.0, "variance": 0.0, "flat": false}
+	var ys: Array = _bo.ys
+	var y_min := INF
+	var y_max := -INF
+	for y in ys:
+		y_min = minf(y_min, float(y))
+		y_max = maxf(y_max, float(y))
+	if y_max - y_min < 0.08:
+		var best_x := 0.0
+		var best_y := -INF
+		for i in ys.size():
+			if float(ys[i]) > best_y:
+				best_y = float(ys[i])
+				best_x = _bo.xs[i]
+		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
 	var candidates := _candidates()
 	var rec: Dictionary = _bo.suggest(candidates, BayesOpt.MODE_EI, UCB_KAPPA)
-	return {"sens": rec["x"], "mean": rec["mean"], "variance": rec["variance"]}
+	return {"sens": rec["x"], "mean": rec["mean"], "variance": rec["variance"], "flat": false}
 
 # GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]
 func gp_predictions(points: Array) -> Array:

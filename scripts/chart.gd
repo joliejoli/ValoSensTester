@@ -125,9 +125,20 @@ func _draw_band(b: Dictionary, x_range: Vector2, y_range: Vector2) -> void:
 		draw_polyline(lower_pts, b["color"], 1.0, true)
 
 func _draw_legend() -> void:
-	var x := PAD_LEFT
+	var entries: Array[Dictionary] = []
+	for b in bands:
+		if not String(b.get("label", "")).is_empty():
+			entries.append({"color": b["color"], "label": b["label"]})
 	for s in series:
-		draw_rect(Rect2(x, 4, 10, 10), s["color"])
-		draw_string(ThemeDB.fallback_font, Vector2(x + 14, 13), s["label"],
-			HORIZONTAL_ALIGNMENT_LEFT, 120, 10, Color(0.92549, 0.909804, 0.882353, 0.8))
-		x += 130
+		if not String(s.get("label", "")).is_empty():
+			entries.append({"color": s["color"], "label": s["label"]})
+	if entries.is_empty():
+		return
+	# 右上角竖排，避免与标题/多序列横排重叠
+	var x := size.x - PAD_RIGHT - 124.0
+	var y := 4.0
+	for e in entries:
+		draw_rect(Rect2(x, y, 10, 10), e["color"])
+		draw_string(ThemeDB.fallback_font, Vector2(x + 14, y + 9), e["label"],
+			HORIZONTAL_ALIGNMENT_LEFT, 110, 10, Color(0.92549, 0.909804, 0.882353, 0.8))
+		y += 15.0

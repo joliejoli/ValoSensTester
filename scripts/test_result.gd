@@ -15,6 +15,7 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var mode_label: Label = %ModeLabel
 @onready var score_label: Label = %ScoreLabel
 @onready var ci_label: Label = %CiLabel
+@onready var flat_label: Label = %FlatLabel
 @onready var dpi_label: Label = %DpiLabel
 @onready var sample_label: Label = %SampleLabel
 @onready var metric_accuracy: Label = %MetricAccuracy
@@ -50,7 +51,11 @@ func _ready() -> void:
 	else:
 		mode_label.text = "%s · 预估得分 %.2f" % [s.get("mode_label", ""), float(s.get("score_mean", 0.0))]
 		score_label.text = "推荐灵敏度 %.2f" % float(s.get("best_sens", 0.0))
-		ci_label.text = "得分 95%% 置信区间 %.2f ~ %.2f" % [float(s.get("score_low", 0.0)), float(s.get("score_high", 0.0))]
+		if s.get("flat", false):
+			ci_label.text = "各灵敏度得分差异小于测量噪声（平坦曲线）"
+			flat_label.text = "提示：不同灵敏度表现接近，推荐值为已测最高分点，也可按手感选择任意舒适灵敏度"
+		else:
+			ci_label.text = "得分 95%% 置信区间 %.2f ~ %.2f" % [float(s.get("score_low", 0.0)), float(s.get("score_high", 0.0))]
 	var edpi := float(s.get("edpi", 0.0))
 	dpi_label.text = "测试时 DPI %d · eDPI ≈ %d（参考 800 DPI 时 %.1f cm/360°）" % [
 		int(s.get("dpi", 0)),

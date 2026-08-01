@@ -37,6 +37,8 @@ func setup(p_radius: float, p_position: Vector3, p_speed: float = 0.0, p_dir := 
 	_move_dir = p_dir.normalized()
 	angle_rad = p_angle_rad
 	global_position = p_position
+	# 移动窗口以生成点为中心（修复：相机朝向任意时 world bounds 会把出生靶子瞬移到固定边界）
+	move_bounds = Vector2(p_position.x - 3.0, p_position.x + 3.0)
 	spawn_ms = Time.get_ticks_msec()
 	max_lifetime = float(TestConfig.TARGET_MAX_LIFETIME)
 	if not is_node_ready():

@@ -26,7 +26,9 @@ func _init() -> void:
 	_test_sens_direction()
 	_test_history_store()
 	_test_chart()
-	await _test_micro_detect()
+	await 	_test_micro_detect()
+	await _test_long_quota()
+	await _test_blind_sens()
 	await _test_scenes()
 	await _test_flat_detection()
 	print("通过 %d 项，失败 %d 项" % [pass_count, failures])
@@ -97,6 +99,7 @@ func _test_gp_variance() -> void:
 	var p := bo.predict(0.45)
 	_check("低方差数据 GP 方差收缩 <0.1", p["variance"] < 0.1, "=%f" % p["variance"])
 	_check("GP 预测在数据区间", p["mean"] > 0.6 and p["mean"] < 0.85)
+	_check("σ_n 校准为 0.08（附录 E P0）", absf(bo.noise_variance - 0.0064) < 1e-9, "=%f" % bo.noise_variance)
 
 # ---------- 指标聚合 ----------
 
@@ -192,6 +195,48 @@ func _test_micro_detect() -> void:
 	var before := int(t.micro_adjusts)
 	shoot._update_micro_adjust_detection()
 	_check("微调静止帧不计", int(t.micro_adjusts) == before)
+
+# ---------- 长距配额与单盲 ----------
+
+func _test_long_quota() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	var tc: Node = root.get_node("TestConfig")
+	tc.set("test_mode", 0)  # STANDARD
+	shoot._long_positions = [0, 3, 6, 9]
+	var cam: Camera3D = shoot.get_node("%Camera")
+	shoot._yaw = 0.0
+	cam.rotation = Vector3.ZERO
+	var forward := Vector3(0, 0, -1)
+	var long_count := 0
+	var short_min := 90.0
+	for i in 12:
+		shoot.targets_spawned = i
+		var pos: Vector3 = shoot._spawn_position(shoot._long_positions.has(i))
+		var ang := rad_to_deg(acos(clampf((pos - cam.global_position).normalized().dot(forward), -1.0, 1.0)))
+		if shoot._long_positions.has(i):
+			long_count += 1
+			if ang < 17.0:
+				short_min = minf(short_min, ang)
+	_check("长距配额 4 个全部 ≥17°", long_count == 4 and short_min >= 17.0, "n=%d min=%.1f" % [long_count, short_min])
+	# 非长距位置（8 个）角距应 ≤15°（短距）
+	var short_max := -1.0
+	for i in 12:
+		if shoot._long_positions.has(i):
+			continue
+		shoot.targets_spawned = i
+		var pos: Vector3 = shoot._spawn_position(false)
+		var ang := rad_to_deg(acos(clampf((pos - cam.global_position).normalized().dot(forward), -1.0, 1.0)))
+		short_max = maxf(short_max, ang)
+	_check("非配额位置全部短距（≤15.5°）", short_max <= 15.5, "max=%.1f" % short_max)
+
+func _test_blind_sens() -> void:
+	var shoot: Node3D = (load("res://test_shoot.tscn") as PackedScene).instantiate()
+	root.add_child(shoot)
+	await process_frame
+	shoot._apply_sens(0.35)
+	_check("单盲：HUD 不显示灵敏度数值", shoot.get_node("%SensLabel").text.contains("??"), shoot.get_node("%SensLabel").text)
 
 # ---------- 场景实例化 ----------
 

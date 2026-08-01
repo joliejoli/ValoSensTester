@@ -54,6 +54,8 @@ var round_data: Dictionary = {}
 var test_plan := TestPlan.new()
 # 目标对象池（Phase 7 性能：复用节点减少 instantiate/free）
 var _target_pool: Array[Node3D] = []
+# 每轮长距靶固定配额位置（附录 E P0：4/12 均匀分布，消除轮间任务结构噪声）
+var _long_positions: Array[int] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -236,7 +238,10 @@ func _spawn_single_target() -> void:
 			if TestConfig.test_mode == TestConfig.TestMode.TRACKING else 0.8
 	# 追踪模式：正弦摆动跟枪（Phase 6），非追踪保持直线移动
 	var track_sine: bool = TestConfig.test_mode == TestConfig.TestMode.TRACKING
-	var pos := _spawn_position()
+	# 长距配额：本靶是否长距（附录 E P0：每轮固定 4/12 均匀分布；热身阶段无配额走随机）
+	var is_long := (_long_positions.has(targets_spawned)) \
+		if not _long_positions.is_empty() else (randf() < 0.35)
+	var pos := _spawn_position(is_long)
 	var tries := 0
 	while tries < 8:
 		var overlap := false
@@ -261,12 +266,12 @@ func _spawn_single_target() -> void:
 # 参照 VALORANT 靶场机器人固定方向，避免转身找靶分散注意力与引入无关转身变量）
 # 水平 ±30° / 垂直 ±15°；长距 18-30°（0.10 sens 时 3s 内物理可达，取消 sens_min 联动）
 # Flick 模式（Phase 6）：全部长距靶（18-30° 扇形边缘），专测快速拉枪
-func _spawn_position() -> Vector3:
+func _spawn_position(p_force_long: bool = false) -> Vector3:
 	var cam_pos := camera.global_position
 	var yaw_off := 0.0
 	var pitch_off := 0.0
 	var flick: bool = TestConfig.test_mode == TestConfig.TestMode.FLICK
-	if flick or randf() < 0.35:
+	if flick or p_force_long:
 		# 长距/Flick：18-30° 环形，pitch 不 clamp（≤30° 仍在垂直半 FOV 33° 内，避免截断总角距）
 		var dist := deg_to_rad(randf_range(18.0, 30.0))
 		var angle := randf() * TAU
@@ -415,6 +420,14 @@ func _start_round() -> void:
 	hit_count = 0
 	targets_spawned = 0
 	targets_done = 0
+	# 长距固定配额：12 个位置随机选 4 个做长距（附录 E P0）
+	_long_positions.clear()
+	var positions: Array[int] = []
+	for i in TestConfig.TARGETS_PER_ROUND:
+		positions.append(i)
+	positions.shuffle()
+	for i in 4:
+		_long_positions.append(positions[i])
 	round_start_ms = Time.get_ticks_msec()
 	_update_hud()
 	_show_banner("第 %d/%d 轮" % [round_index + 1, TestConfig.rounds])
@@ -502,7 +515,8 @@ func _apply_sens(sens: float) -> void:
 	current_sens = sens
 	# VALORANT yaw = 0.07°/count，每 count 鼠标移动旋转 0.07 × 灵敏度 度
 	deg_per_pixel = 0.07 * sens
-	sens_label.text = "灵敏度 %.2f" % sens
+	# 单盲（附录 E P1）：测试中不显示当前灵敏度，消除玩家锚定/期望效应
+	sens_label.text = "灵敏度 ??.??"
 
 func _update_hud() -> void:
 	round_label.text = "第 %d/%d 轮" % [round_index + 1, TestConfig.rounds]

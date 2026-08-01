@@ -8,7 +8,7 @@ const MODE_EI := 1
 # 核参数
 var length_scale := 0.2
 var signal_variance := 1.0
-var noise_variance := 0.0144  # σ_n = 0.12，单轮得分噪声（信度评估结论）
+var noise_variance := 0.0064  # σ_n = 0.08（附录 E P0 校准：200 轮仿真单轮 score SD ≈ 0.053 + 余量）
 
 var xs: Array[float] = []
 var ys: Array[float] = []

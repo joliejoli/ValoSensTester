@@ -12,6 +12,8 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 		targets += int(r.get("targets_done", 0))
 	var acc := float(metrics.accuracy)
 	var eff := float(metrics.get("median_eff", 0.0))
+	# 失败试验的瞄准耗时（C 项）：区分"快而不稳"与"慢而打偏"
+	var miss_med := float(metrics.get("median_miss", 0.0))
 	# 轨迹级微调（准星方向反转/靶，与是否开火无关——不开火玩家同样可测）
 	var adjust_per := float(metrics.get("micro_adjusts", 0)) / float(maxf(targets, 1))
 	# 跟枪精度（移动靶/追踪，-1 表示无移动靶数据）
@@ -54,6 +56,19 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 			"tag": "fast_unstable",
 			"title": "快而不稳",
 			"detail": "轨迹效率 %.2f 很快但成功率只有 %.0f%%，建议放慢节奏保证准星停稳再开枪。" % [eff, acc * 100.0],
+		})
+	# 失败时间诊断（C 项）：失败靶耗时区分两类问题
+	if miss_med > 0.0 and miss_med < 0.5 and acc < 0.8:
+		problems.append({
+			"tag": "fast_unstable",
+			"title": "出手太快（失败点击很快但没中）",
+			"detail": "失败点击中位耗时仅 %.2fs——准星没到位就开枪了，建议停稳再击发。" % miss_med,
+		})
+	elif miss_med > 1.2 and acc < 0.75:
+		problems.append({
+			"tag": "slow_aim",
+			"title": "瞄了很久还是没中（慢而打偏）",
+			"detail": "失败点击中位耗时 %.2fs——瞄准充分但准星始终不到位，定位精度是主要瓶颈，建议用大角度靶练拉枪。" % miss_med,
 		})
 	var scores: Array = []
 	for r in rounds:

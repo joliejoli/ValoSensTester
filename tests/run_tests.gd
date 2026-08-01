@@ -78,6 +78,12 @@ func _test_objective() -> void:
 	var slow := all_hit.duplicate(true)
 	slow["hit_times"] = [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2]
 	_check("完成越快得分越高", Objective.score(fast) > Objective.score(slow))
+	# 稳定性调制（B 项）：同平均耗时下，波动大的轮得分更低
+	var stable := all_hit.duplicate(true)
+	stable["hit_times"] = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+	var unstable := all_hit.duplicate(true)
+	unstable["hit_times"] = [0.2, 0.2, 0.2, 0.2, 1.0, 1.0, 1.0, 1.0, 0.6, 0.6, 0.6, 0.6]
+	_check("波动大的轮得分更低（稳定性调制）", Objective.score(stable) > Objective.score(unstable), "stable=%f unstable=%f" % [Objective.score(stable), Objective.score(unstable)])
 
 # ---------- BO 收敛 ----------
 
@@ -131,13 +137,15 @@ func _test_metrics() -> void:
 		"targets_done": 12, "hits": 9, "misses": 2, "micro_adjusts": 20,
 		"hit_times": [0.5, 0.6, 0.7], "hit_angles": [0.2, 0.3, 0.4],
 		"hit_timestamps": [1.0, 2.0, 3.0, 4.0, 5.0], "sens": 0.35, "shots": 11,
-		"expired_angles": [0.3], "track_scores": [0.7, 0.8]}]
+		"expired_angles": [0.3], "track_scores": [0.7, 0.8],
+		"miss_times": [0.4, 1.4]}]
 	var m := TestMetrics.aggregate(rounds)
 	_check("成功率 9/(9+2+1)=75%", absf(m.accuracy - 0.75) < 1e-9, "=%f" % m.accuracy)
 	_check("归一化耗时 median([0.875,0.7,0.6125])=0.7", absf(m.median_eff - 0.7) < 1e-9)
 	_check("跟枪精度平均 0.75", absf(m.track_accuracy - 0.75) < 1e-9)
 	_check("切换间隔 1.0s", absf(m.switch_secs - 1.0) < 1e-9)
 	_check("每靶微调 20/12=1.67", absf(float(m.micro_adjusts) / 12.0 - 20.0 / 12.0) < 1e-9)
+	_check("失败耗时中位 median([0.4,1.4])=0.9", absf(m.median_miss - 0.9) < 1e-9, "=%f" % m.median_miss)
 
 # ---------- 灵敏度方向建议 ----------
 
@@ -229,7 +237,7 @@ func _test_one_click_rule() -> void:
 		t.free()
 	shoot.active_targets.clear()
 	shoot.state = 2  # ACTIVE
-	shoot.round_data = {"misses": 0, "micro_adjusts": 0, "hit_times": [], "hit_angles": [], "hit_timestamps": [], "track_scores": [], "shot_timestamps": []}
+	shoot.round_data = {"misses": 0, "micro_adjusts": 0, "hit_times": [], "hit_angles": [], "hit_timestamps": [], "track_scores": [], "shot_timestamps": [], "miss_times": []}
 	await process_frame
 	# 靶放在准星偏 10° 处（点击未命中 → 失败消失）
 	var t: Node3D = (preload("res://target.tscn") as PackedScene).instantiate()

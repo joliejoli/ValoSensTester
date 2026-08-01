@@ -193,17 +193,18 @@ func _on_miss_click(now_ms: int) -> void:
 	if active_targets.is_empty():
 		return
 	round_data["misses"] = int(round_data.get("misses", 0)) + 1
-	if TestConfig.test_mode != TestConfig.TestMode.PRESSURE:
-		# 单靶模式：最近靶失败消失，进入下一靶
-		var closest: Node3D = null
-		var best := INF
-		for t in active_targets:
-			var ang := _angle_to_target(t)
-			if ang < best:
-				best = ang
-				closest = t
-		if closest != null:
-			# 失败靶的轨迹微调一并计入
+	# 失败耗时（C 项：失败试验的瞄准时间，用于"快而不稳/慢而打偏"诊断，不影响评分）
+	var closest: Node3D = null
+	var best := INF
+	for t in active_targets:
+		var ang := _angle_to_target(t)
+		if ang < best:
+			best = ang
+			closest = t
+	if closest != null:
+		round_data["miss_times"].append((now_ms - int(closest.spawn_ms)) / 1000.0)
+		if TestConfig.test_mode != TestConfig.TestMode.PRESSURE:
+			# 单靶模式：失败靶的轨迹微调一并计入，失败靶消失推进
 			round_data["micro_adjusts"] = int(round_data.get("micro_adjusts", 0)) + int(closest.micro_adjusts)
 			_despawn_target(closest)
 			targets_done += 1
@@ -406,6 +407,7 @@ func _start_round() -> void:
 		"hit_times": [],
 		"hit_angles": [],
 		"hit_timestamps": [],
+		"miss_times": [],
 		"expired_angles": [],
 	}
 	shot_count = 0

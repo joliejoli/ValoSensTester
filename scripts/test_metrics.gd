@@ -10,6 +10,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 	var total_expired := 0
 	var micro := 0
 	var hit_times: Array = []
+	var miss_times: Array = []
 	var eff_times: Array = []
 	var track_scores: Array = []
 	var score_sum := 0.0
@@ -27,6 +28,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 				th = maxf(float(angles[i]), 0.001)
 			eff_times.append(float(times[i]) * sens / th)
 		hit_times.append_array(times)
+		miss_times.append_array(r.get("miss_times", []))
 		track_scores.append_array(r.get("track_scores", []))
 		score_sum += Objective.score(r)
 	# 目标切换效率（Phase 6）：相邻命中时刻间隔的中位数
@@ -69,6 +71,7 @@ static func aggregate(rounds: Array) -> Dictionary:
 	return {
 		"accuracy": float(total_hits) / float(denom) if denom > 0 else 0.0,
 		"median_hit": median(hit_times),
+		"median_miss": median(miss_times),
 		"median_eff": median(eff_times),
 		"micro_adjusts": micro,
 		"track_accuracy": track_acc,

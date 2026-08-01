@@ -67,10 +67,100 @@ func _ready() -> void:
 	metric_accuracy.text = "%.1f%%" % (m.accuracy * 100.0)
 	metric_hit_time.text = "%.2fs" % m.median_hit
 	metric_correct.text = "%.2fs" % m.median_correct
-	metric_wasted.text = "%d" % m.wasted
+	metric_wasted.text = "%.1f%%" % (m.first_shot_rate * 100.0)
 	metric_score.text = "%.2f" % (float(s.get("score_mean", 0.0)) if not is_consistency else m.score)
 	metric_rounds.text = "%d 轮" % rounds.size()
+	_build_page_chart()
+	_build_page_advice()
 	_save_history(s, m, rounds, is_consistency)
+
+# ---------- 结果页直接展示：得分曲线 + 分析与建议 ----------
+
+func _build_page_chart() -> void:
+	for c in %PageChartBox.get_children():
+		c.queue_free()
+	var rounds: Array = TestConfig.round_results
+	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
+	var c1 := Chart.new()
+	c1.title = "灵敏度-综合评分（阴影 = 95% 置信区间）"
+	c1.y_limits = Vector2(0, 1)
+	c1.custom_minimum_size = Vector2(0, 160)
+	if not is_consistency and not rounds.is_empty():
+		var curve := _gp_curve(rounds)
+		c1.add_band(curve["upper"], curve["lower"], Color(1, 0.368627, 0.4), "95% CI")
+		c1.add_series(curve["mean"], Color(1, 0.7, 0.72), "GP 后验")
+		c1.add_series(curve["obs"], Color(0.95, 0.95, 0.95), "实测")
+	else:
+		var pts: Array = []
+		for i in rounds.size():
+			pts.append(Vector2(i + 1, _round_score(rounds[i])))
+		c1.title = "各轮得分（一致性测试）"
+		c1.add_series(pts, Color(0.6, 0.95, 0.7), "得分")
+	%PageChartBox.add_child(c1)
+
+func _build_page_advice() -> void:
+	for c in %PageAdviceBox.get_children():
+		c.queue_free()
+	for ctrl in _make_advice_controls():
+		%PageAdviceBox.add_child(ctrl)
+
+func _make_advice_controls() -> Array:
+	var rounds: Array = TestConfig.round_results
+	var s: Dictionary = TestConfig.opt_summary
+	var metrics := TestMetrics.aggregate(rounds)
+	var problems := Advice.diagnose(metrics, rounds)
+	var advice := Advice.train_advice(problems)
+	var out: Array = []
+	if problems.is_empty():
+		out.append(_mk_label("未识别出明显问题：表现均衡，可在推荐灵敏度下继续巩固手感。", 0.85, false))
+	else:
+		for p in problems:
+			out.append(_mk_label("• %s" % p["title"], 1.0, true))
+			out.append(_mk_label(p["detail"], 0.8, false))
+		out.append(HSeparator.new())
+	for a in advice:
+		out.append(_mk_label("训练建议：%s" % a, 0.95, false))
+	out.append(_mk_label(Advice.grip_advice(float(s.get("best_sens", 0.0))), 0.72, false))
+	return out
+
+func _mk_label(text: String, alpha: float, red: bool) -> Label:
+	var lab := Label.new()
+	lab.text = text
+	lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lab.modulate = Color(1, 0.368627, 0.4, alpha) if red else Color(0.92549, 0.909804, 0.882353, alpha)
+	return lab
+
+# GP 后验曲线（公共）：供结果页与详细报告弹窗使用
+func _gp_curve(rounds: Array) -> Dictionary:
+	var min_s := 1.0
+	var max_s := 0.0
+	for r in rounds:
+		min_s = minf(min_s, float(r.get("sens", 0.0)))
+		max_s = maxf(max_s, float(r.get("sens", 0.0)))
+	min_s = maxf(min_s - 0.05, 0.05)
+	max_s = minf(max_s + 0.05, 0.95)
+	var grid: Array = []
+	var x := min_s
+	while x <= max_s + 0.001:
+		grid.append(x)
+		x += 0.02
+	var plan := TestPlan.new()
+	plan.begin(false, min_s, max_s, rounds.size())
+	for r in rounds:
+		plan.add_result(r)
+	var preds := plan.gp_predictions(grid)
+	var upper: Array = []
+	var lower: Array = []
+	var mean: Array = []
+	for p in preds:
+		var sd := sqrt(maxf(p["variance"], 0.0))
+		upper.append(Vector2(p["x"], clampf(p["mean"] + 1.96 * sd, 0.0, 1.0)))
+		lower.append(Vector2(p["x"], clampf(p["mean"] - 1.96 * sd, 0.0, 1.0)))
+		mean.append(Vector2(p["x"], clampf(p["mean"], 0.0, 1.0)))
+	var obs: Array = []
+	for r in rounds:
+		obs.append(Vector2(float(r.get("sens", 0.0)), _round_score(r)))
+	return {"upper": upper, "lower": lower, "mean": mean, "obs": obs}
 
 func _save_history(s: Dictionary, m: Dictionary, rounds: Array, is_consistency: bool) -> void:
 	var mean_score: float = m.score if is_consistency else float(s.get("score_mean", m.score))
@@ -114,40 +204,16 @@ func _build_charts() -> void:
 		c.queue_free()
 	var rounds: Array = TestConfig.round_results
 	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
-	var min_s := 1.0
-	var max_s := 0.0
-	for r in rounds:
-		min_s = minf(min_s, float(r.get("sens", 0.0)))
-		max_s = maxf(max_s, float(r.get("sens", 0.0)))
-	min_s = maxf(min_s - 0.05, 0.05)
-	max_s = minf(max_s + 0.05, 0.95)
-	var grid: Array = []
-	var x := min_s
-	while x <= max_s + 0.001:
-		grid.append(x)
-		x += 0.02
 	# 1) 灵敏度-综合评分：GP 后验均值 + 95% CI 带 + 实测散点
 	var c1 := Chart.new()
 	c1.title = "灵敏度-综合评分（GP 后验，阴影 = 95% CI）"
 	c1.y_limits = Vector2(0, 1)
 	c1.custom_minimum_size = Vector2(0, 190)
 	if not is_consistency and not rounds.is_empty():
-		var plan := TestPlan.new()
-		plan.begin(false, min_s, max_s, rounds.size())
-		for r in rounds:
-			plan.add_result(r)
-		var preds := plan.gp_predictions(grid)
-		var upper: Array = []
-		var lower: Array = []
-		for p in preds:
-			var sd := sqrt(maxf(p["variance"], 0.0))
-			upper.append(Vector2(p["x"], clampf(p["mean"] + 1.96 * sd, 0.0, 1.0)))
-			lower.append(Vector2(p["x"], clampf(p["mean"] - 1.96 * sd, 0.0, 1.0)))
-		c1.add_band(upper, lower, Color(1, 0.368627, 0.4), "95% CI")
-		var pts: Array = []
-		for r in rounds:
-			pts.append(Vector2(float(r.get("sens", 0.0)), _round_score(r)))
-		c1.add_series(pts, Color(0.95, 0.95, 0.95), "实测得分")
+		var curve := _gp_curve(rounds)
+		c1.add_band(curve["upper"], curve["lower"], Color(1, 0.368627, 0.4), "95% CI")
+		c1.add_series(curve["mean"], Color(1, 0.7, 0.72), "GP 后验")
+		c1.add_series(curve["obs"], Color(0.95, 0.95, 0.95), "实测")
 	charts_box.add_child(c1)
 	# 2) 灵敏度-命中率
 	var c2 := Chart.new()
@@ -205,43 +271,12 @@ func _build_table() -> void:
 func _build_advice() -> void:
 	for c in advice_box.get_children():
 		c.queue_free()
-	var rounds: Array = TestConfig.round_results
-	var s: Dictionary = TestConfig.opt_summary
-	var metrics := TestMetrics.aggregate(rounds)
-	var problems := Advice.diagnose(metrics, rounds)
-	var advice := Advice.train_advice(problems)
-	if problems.is_empty():
-		var ok := Label.new()
-		ok.text = "未识别出明显问题：表现均衡，可在推荐灵敏度下继续巩固手感。"
-		ok.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		advice_box.add_child(ok)
-	else:
-		for p in problems:
-			var t := Label.new()
-			t.text = "• %s" % p["title"]
-			t.modulate = Color(1, 0.368627, 0.4)
-			t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			advice_box.add_child(t)
-			var d := Label.new()
-			d.text = p["detail"]
-			d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			d.modulate = Color(0.92549, 0.909804, 0.882353, 0.8)
-			advice_box.add_child(d)
-		advice_box.add_child(HSeparator.new())
-	for a in advice:
-		var lab := Label.new()
-		lab.text = "训练建议：%s" % a
-		lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		advice_box.add_child(lab)
-	var grip := Advice.grip_advice(float(s.get("best_sens", 0.0)))
-	var g := Label.new()
-	g.text = grip
-	g.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	g.modulate = Color(0.92549, 0.909804, 0.882353, 0.75)
-	advice_box.add_child(g)
+	for ctrl in _make_advice_controls():
+		advice_box.add_child(ctrl)
+	var metrics := TestMetrics.aggregate(TestConfig.round_results)
 	_share_metrics = metrics
-	_share_problems = problems
-	_share_advice = advice
+	_share_problems = Advice.diagnose(metrics, TestConfig.round_results)
+	_share_advice = Advice.train_advice(_share_problems)
 	share_hint.text = ""
 
 func _on_share_pressed() -> void:

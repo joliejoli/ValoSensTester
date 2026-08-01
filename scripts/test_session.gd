@@ -41,6 +41,7 @@ var opt_summary: Dictionary = {}
 
 var ui_scale: float = 0.0  # 0 = 自动适配窗口，否则为固定缩放因子
 var display_mode: int = 0  # 0=窗口化 1=全屏 2=无边框全屏
+var crosshair_style: int = 1  # 0=标准十字 1=紧凑十字 2=圆点
 
 var _settings: Dictionary = {}
 
@@ -75,6 +76,7 @@ func load_settings() -> void:
 	_settings["volume"] = config.get_value("audio", "volume", 100.0)
 	ui_scale = config.get_value("display", "ui_scale", 0.0)
 	display_mode = config.get_value("display", "mode", 0)
+	crosshair_style = config.get_value("display", "crosshair_style", 1)
 	apply_display_mode()
 	apply_ui_scale()
 

@@ -14,6 +14,13 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 	var acc := float(metrics.accuracy)
 	var hit := float(metrics.median_hit)
 	var correct := float(metrics.median_correct)
+	var first_rate := float(metrics.get("first_shot_rate", 0.0))
+	if first_rate > 0.0 and first_rate < 0.55:
+		problems.append({
+			"tag": "overaim",
+			"title": "一次定位率偏低（需要多次修正）",
+			"detail": "第一枪命中率 %.0f%%，多数目标需要补枪修正，拉枪定位精度是主要瓶颈。" % (first_rate * 100.0),
+		})
 	if correct > 0.35 or wasted_per > 0.3:
 		problems.append({
 			"tag": "overaim",

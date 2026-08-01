@@ -144,6 +144,20 @@ popup/item_0/text = "窗口化"
 popup/item_1/text = "全屏"
 popup/item_2/text = "无边框全屏"
 
+[node name="CrosshairLabel" type="Label" parent="Center/Card/Margin/VBox/Grid"]
+layout_mode = 2
+text = "准星样式"
+vertical_alignment = 1
+
+[node name="CrosshairOption" type="OptionButton" parent="Center/Card/Margin/VBox/Grid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "标准十字"
+popup/item_1/text = "紧凑十字"
+popup/item_2/text = "圆点"
+
 [node name="Hint" type="Label" parent="Center/Card/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.45)

@@ -32,7 +32,7 @@ title_text = "测试结果"
 script = ExtResource("4_esc")
 esc_scene = "res://main.tscn"
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -42,52 +42,54 @@ offset_bottom = -120.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBox" type="VBoxContainer" parent="Center"]
-custom_minimum_size = Vector2(860, 0)
+[node name="Center" type="CenterContainer" parent="Scroll"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Scroll/Center"]
+custom_minimum_size = Vector2(960, 0)
 layout_mode = 2
 theme_override_constants/separation = 8
-alignment = 1
 
-[node name="RecTitle" type="Label" parent="Center/VBox"]
+[node name="RecTitle" type="Label" parent="Scroll/Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
 theme_override_font_sizes/font_size = 18
 text = "推荐灵敏度（游戏内）"
 horizontal_alignment = 1
 
-[node name="RecLabel" type="Label" parent="Center/VBox"]
+[node name="RecLabel" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.368627, 0.4, 1)
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 56
 text = "--"
 horizontal_alignment = 1
 
-[node name="ModeLabel" type="Label" parent="Center/VBox"]
+[node name="ModeLabel" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.85)
-theme_override_font_sizes/font_size = 20
-text = ""
-horizontal_alignment = 1
-
-[node name="ScoreLabel" type="Label" parent="Center/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.7)
 theme_override_font_sizes/font_size = 18
 text = ""
 horizontal_alignment = 1
 
-[node name="CiLabel" type="Label" parent="Center/VBox"]
+[node name="ScoreLabel" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
-theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.7)
+theme_override_font_sizes/font_size = 16
 text = ""
 horizontal_alignment = 1
 
-[node name="FlatLabel" type="Label" parent="Center/VBox"]
+[node name="CiLabel" type="Label" parent="Scroll/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.6)
+theme_override_font_sizes/font_size = 13
+text = ""
+horizontal_alignment = 1
+
+[node name="FlatLabel" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -97,188 +99,212 @@ text = ""
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="DpiLabel" type="Label" parent="Center/VBox"]
+[node name="DpiLabel" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.55)
-theme_override_font_sizes/font_size = 14
-text = ""
-horizontal_alignment = 1
-
-[node name="SampleLabel" type="Label" parent="Center/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 13
 text = ""
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="Center/VBox"]
-custom_minimum_size = Vector2(0, 10)
+[node name="SampleLabel" type="Label" parent="Scroll/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Scroll/Center/VBox"]
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="SectionTitle" type="Label" parent="Center/VBox"]
+[node name="SectionTitle" type="Label" parent="Scroll/Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
 theme_override_font_sizes/font_size = 16
 text = "本次测试表现（全轮聚合）"
 horizontal_alignment = 1
 
-[node name="Metrics" type="GridContainer" parent="Center/VBox"]
+[node name="Metrics" type="GridContainer" parent="Scroll/Center/VBox"]
 layout_mode = 2
 theme_override_constants/h_separation = 24
 theme_override_constants/v_separation = 10
 columns = 3
 
-[node name="Box1" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box1" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V1" type="VBoxContainer" parent="Center/VBox/Metrics/Box1"]
+[node name="V1" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box1"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K1" type="Label" parent="Center/VBox/Metrics/Box1/V1"]
+[node name="K1" type="Label" parent="Scroll/Center/VBox/Metrics/Box1/V1"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "命中率（含超时=未命中）"
 horizontal_alignment = 1
 
-[node name="MetricAccuracy" type="Label" parent="Center/VBox/Metrics/Box1/V1"]
+[node name="MetricAccuracy" type="Label" parent="Scroll/Center/VBox/Metrics/Box1/V1"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="Box2" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box2" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V2" type="VBoxContainer" parent="Center/VBox/Metrics/Box2"]
+[node name="V2" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box2"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K2" type="Label" parent="Center/VBox/Metrics/Box2/V2"]
+[node name="K2" type="Label" parent="Scroll/Center/VBox/Metrics/Box2/V2"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "中位命中耗时（秒）"
 horizontal_alignment = 1
 
-[node name="MetricHitTime" type="Label" parent="Center/VBox/Metrics/Box2/V2"]
+[node name="MetricHitTime" type="Label" parent="Scroll/Center/VBox/Metrics/Box2/V2"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="Box3" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box3" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V3" type="VBoxContainer" parent="Center/VBox/Metrics/Box3"]
+[node name="V3" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box3"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K3" type="Label" parent="Center/VBox/Metrics/Box3/V3"]
+[node name="K3" type="Label" parent="Scroll/Center/VBox/Metrics/Box3/V3"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "中位修正耗时（秒）"
 horizontal_alignment = 1
 
-[node name="MetricCorrect" type="Label" parent="Center/VBox/Metrics/Box3/V3"]
+[node name="MetricCorrect" type="Label" parent="Scroll/Center/VBox/Metrics/Box3/V3"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="Box4" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box4" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V4" type="VBoxContainer" parent="Center/VBox/Metrics/Box4"]
+[node name="V4" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box4"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K4" type="Label" parent="Center/VBox/Metrics/Box4/V4"]
+[node name="K4" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
-text = "多余开火次数（打空枪）"
+text = "一次定位率（第一枪命中）"
 horizontal_alignment = 1
 
-[node name="MetricWasted" type="Label" parent="Center/VBox/Metrics/Box4/V4"]
+[node name="MetricWasted" type="Label" parent="Scroll/Center/VBox/Metrics/Box4/V4"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="Box5" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box5" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V5" type="VBoxContainer" parent="Center/VBox/Metrics/Box5"]
+[node name="V5" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box5"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K5" type="Label" parent="Center/VBox/Metrics/Box5/V5"]
+[node name="K5" type="Label" parent="Scroll/Center/VBox/Metrics/Box5/V5"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "综合评分（0-1）"
 horizontal_alignment = 1
 
-[node name="MetricScore" type="Label" parent="Center/VBox/Metrics/Box5/V5"]
+[node name="MetricScore" type="Label" parent="Scroll/Center/VBox/Metrics/Box5/V5"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="Box6" type="PanelContainer" parent="Center/VBox/Metrics"]
-custom_minimum_size = Vector2(250, 74)
+[node name="Box6" type="PanelContainer" parent="Scroll/Center/VBox/Metrics"]
+custom_minimum_size = Vector2(290, 66)
 layout_mode = 2
 
-[node name="V6" type="VBoxContainer" parent="Center/VBox/Metrics/Box6"]
+[node name="V6" type="VBoxContainer" parent="Scroll/Center/VBox/Metrics/Box6"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="K6" type="Label" parent="Center/VBox/Metrics/Box6/V6"]
+[node name="K6" type="Label" parent="Scroll/Center/VBox/Metrics/Box6/V6"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
 text = "数据轮数"
 horizontal_alignment = 1
 
-[node name="MetricRounds" type="Label" parent="Center/VBox/Metrics/Box6/V6"]
+[node name="MetricRounds" type="Label" parent="Scroll/Center/VBox/Metrics/Box6/V6"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "--"
 horizontal_alignment = 1
 
-[node name="HistoryHint" type="Label" parent="Center/VBox"]
+[node name="ChartTitle" type="Label" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 16
+text = "灵敏度曲线"
+horizontal_alignment = 1
+
+[node name="PageChartBox" type="VBoxContainer" parent="Scroll/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AdviceTitle" type="Label" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.27451, 0.333333, 1)
+theme_override_font_sizes/font_size = 16
+text = "分析与建议"
+horizontal_alignment = 1
+
+[node name="PageAdviceBox" type="VBoxContainer" parent="Scroll/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HistoryHint" type="Label" parent="Scroll/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.4)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = ""
 horizontal_alignment = 1
 

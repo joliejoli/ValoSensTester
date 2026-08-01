@@ -101,6 +101,7 @@ func _shoot() -> void:
 		round_data["shot_timestamps"].append((Time.get_ticks_msec() - round_start_ms) / 1000.0)
 	var ray := _cast_ray()
 	if ray.is_empty():
+		_record_miss_shot(Time.get_ticks_msec())
 		_on_miss()
 		return
 	var col: Object = ray["collider"]
@@ -112,7 +113,23 @@ func _shoot() -> void:
 			hit_player.play()
 			crosshair.flash()
 			return
+	_record_miss_shot(Time.get_ticks_msec())
 	_on_miss()
+
+# 打空枪：归属到准星方向最近的活动靶（角距 <15°），
+# 使 first_shot_ms/微调耗时数据真实（否则 first_shot_ms=命中时刻，修正恒为 0）
+func _record_miss_shot(now_ms: int) -> void:
+	var forward := -camera.global_transform.basis.z
+	var best_ang := deg_to_rad(15.0)
+	var best_target: Node3D = null
+	for t in active_targets:
+		var dir := (t.global_position - camera.global_position).normalized()
+		var ang := acos(clampf(dir.dot(forward), -1.0, 1.0))
+		if ang < best_ang:
+			best_ang = ang
+			best_target = t
+	if best_target != null:
+		best_target.mark_shot(now_ms)
 
 func _on_miss() -> void:
 	miss_player.play()
@@ -220,8 +237,11 @@ func _on_target_hit(t: Node3D) -> void:
 		round_data["first_hit_time"] = dt
 	round_data["hit_times"].append((now_ms - int(t.spawn_ms)) / 1000.0)
 	round_data["hit_angles"].append(float(t.angle_rad))
-	# 越靶统计（复审 P0-5）：命中前多余开火数（打空枪），无伪信号
+	# 越靶统计（复审 P0-5）：命中前多余开火数（含打空枪归属），无伪信号
 	round_data["overshoots"] = int(round_data.get("overshoots", 0)) + int(t.shots_against) - 1
+	# 一次性定位率：一枪命中的靶数
+	if int(t.shots_against) <= 1:
+		round_data["first_shot_hits"] = int(round_data.get("first_shot_hits", 0)) + 1
 	var fsm: Variant = t.get("first_shot_ms")
 	if fsm != null and int(fsm) >= 0:
 		# 修正时间：该靶首次开火 → 命中的耗时（复审 P1-3，数组化避免只存最后一靶）
@@ -276,6 +296,7 @@ func _start_round() -> void:
 		"shots": 0,
 		"hits": 0,
 		"overshoots": 0,
+		"first_shot_hits": 0,
 		"first_hit_time": 0.0,
 		"total_time_ms": 0,
 		"shot_timestamps": [],

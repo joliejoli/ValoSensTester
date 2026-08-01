@@ -103,6 +103,7 @@ vertical_alignment = 1
 [node name="DetailPopup" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
+z_index = 10
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -183,6 +184,7 @@ text = "关闭"
 [node name="TrendPopup" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
+z_index = 10
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

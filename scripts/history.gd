@@ -35,7 +35,7 @@ func _rebuild() -> void:
 	for child in list_box.get_children():
 		if child == empty_label:
 			continue
-		child.queue_free()
+xian		child.queue_free()
 	var shown := 0
 	for rec in _records:
 		if _filter != "ALL" and rec.get("type", "") != _filter:

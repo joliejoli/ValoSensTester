@@ -30,12 +30,17 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 @onready var charts_box: VBoxContainer = %ChartsBox
 @onready var table_box: VBoxContainer = %TableBox
 @onready var share_hint: Label = %ShareHint
+@onready var help_button: Button = %HelpButton
+@onready var help_panel: Control = %HelpPanel
 
 var _share_metrics: Dictionary = {}
 var _share_problems: Array = []
 var _share_advice: Array = []
 
 func _ready() -> void:
+	# 悬停圆形说明按钮：显示评分与图表说明面板
+	help_button.mouse_entered.connect(func() -> void: help_panel.visible = true)
+	help_button.mouse_exited.connect(func() -> void: help_panel.visible = false)
 	var s: Dictionary = TestConfig.opt_summary
 	var rounds: Array = TestConfig.round_results
 	if s.is_empty() or rounds.is_empty():

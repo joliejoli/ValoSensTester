@@ -72,9 +72,10 @@ func _bounds() -> Dictionary:
 func _plot(p: Vector2, x_range: Vector2, y_range: Vector2) -> Vector2:
 	var w := size.x - PAD_LEFT - PAD_RIGHT
 	var h := size.y - PAD_TOP - PAD_BOTTOM
+	# y_range = (min, max)；屏幕 y 向下，max 画顶部、min 画底部
 	return Vector2(
 		PAD_LEFT + (p.x - x_range.x) / (x_range.y - x_range.x) * w,
-		PAD_TOP + h - (p.y - y_range.y) / (y_range.y - y_range.x) * h,
+		PAD_TOP + (y_range.y - p.y) / (y_range.y - y_range.x) * h,
 	)
 
 func _draw() -> void:
@@ -88,6 +89,7 @@ func _draw() -> void:
 	var grid_color := Color(1, 1, 1, 0.08)
 	var label_color := Color(0.92549, 0.909804, 0.882353, 0.5)
 	for i in GRID_LINES + 1:
+		# 顶部标最大值、底部标最小值（与 _plot 的 y 方向一致）
 		var y_val := lerpf(y_range.y, y_range.x, float(i) / float(GRID_LINES))
 		var py := PAD_TOP + plot_h * float(i) / float(GRID_LINES)
 		draw_line(Vector2(PAD_LEFT, py), Vector2(size.x - PAD_RIGHT, py), grid_color, 1.0)

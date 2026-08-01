@@ -46,5 +46,6 @@ static func _write(path: String, records: Array) -> void:
 	f.store_string(JSON.stringify({"version": 1, "records": records}))
 
 static func format_date(ts: int) -> String:
-	var dt := Time.get_datetime_string_from_unix_time(ts, true)
+	# utc=false：显示本地时间（北京时间 UTC+8；此前 utc=true 显示 UTC 差 8 小时）
+	var dt := Time.get_datetime_string_from_unix_time(ts, false)
 	return dt.replace("T", " ").substr(0, 16)

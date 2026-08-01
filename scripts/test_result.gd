@@ -167,21 +167,15 @@ func _mk_label(text: String, alpha: float, red: bool) -> Label:
 	return lab
 
 # GP 后验曲线（公共）：供结果页与详细报告弹窗使用
+# 曲线覆盖完整灵敏度配置范围（0.02 步长）；两端无数据区 CI 自动变宽（真实反映不确定性）
 func _gp_curve(rounds: Array) -> Dictionary:
-	var min_s := 1.0
-	var max_s := 0.0
-	for r in rounds:
-		min_s = minf(min_s, float(r.get("sens", 0.0)))
-		max_s = maxf(max_s, float(r.get("sens", 0.0)))
-	min_s = maxf(min_s - 0.05, 0.05)
-	max_s = minf(max_s + 0.05, 0.95)
 	var grid: Array = []
-	var x := min_s
-	while x <= max_s + 0.001:
+	var x := TestConfig.sens_min
+	while x <= TestConfig.sens_max + 0.001:
 		grid.append(x)
 		x += 0.02
 	var plan := TestPlan.new()
-	plan.begin(false, min_s, max_s, rounds.size())
+	plan.begin(false, TestConfig.sens_min, TestConfig.sens_max, rounds.size())
 	for r in rounds:
 		plan.add_result(r)
 	var preds := plan.gp_predictions(grid)

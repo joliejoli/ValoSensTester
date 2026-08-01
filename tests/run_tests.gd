@@ -204,31 +204,29 @@ func _test_long_quota() -> void:
 	await process_frame
 	var tc: Node = root.get_node("TestConfig")
 	tc.set("test_mode", 0)  # STANDARD
-	shoot._long_positions = [0, 3, 6, 9]
+	shoot.state = 2  # ACTIVE
+	shoot._start_round()  # 真实路径：内部生成 12 位置洗牌取 4
+	var positions: Array = shoot.get("_long_positions")
+	_check("长距配额 4 个", positions.size() == 4, "n=%d" % positions.size())
 	var cam: Camera3D = shoot.get_node("%Camera")
 	shoot._yaw = 0.0
 	cam.rotation = Vector3.ZERO
 	var forward := Vector3(0, 0, -1)
+	var long_ok := true
 	var long_count := 0
-	var short_min := 90.0
-	for i in 12:
-		shoot.targets_spawned = i
-		var pos: Vector3 = shoot._spawn_position(shoot._long_positions.has(i))
-		var ang := rad_to_deg(acos(clampf((pos - cam.global_position).normalized().dot(forward), -1.0, 1.0)))
-		if shoot._long_positions.has(i):
-			long_count += 1
-			if ang < 17.0:
-				short_min = minf(short_min, ang)
-	_check("长距配额 4 个全部 ≥17°", long_count == 4 and short_min >= 17.0, "n=%d min=%.1f" % [long_count, short_min])
-	# 非长距位置（8 个）角距应 ≤15°（短距）
 	var short_max := -1.0
 	for i in 12:
-		if shoot._long_positions.has(i):
-			continue
-		shoot.targets_spawned = i
-		var pos: Vector3 = shoot._spawn_position(false)
+		shoot.set("targets_spawned", i)
+		var is_long: bool = positions.has(i)
+		var pos: Vector3 = shoot._spawn_position(is_long)
 		var ang := rad_to_deg(acos(clampf((pos - cam.global_position).normalized().dot(forward), -1.0, 1.0)))
-		short_max = maxf(short_max, ang)
+		if is_long:
+			long_count += 1
+			if ang < 17.0:
+				long_ok = false
+		else:
+			short_max = maxf(short_max, ang)
+	_check("配额位置全部长距 ≥17°", long_ok and long_count == 4, "n=%d" % long_count)
 	_check("非配额位置全部短距（≤15.5°）", short_max <= 15.5, "max=%.1f" % short_max)
 
 func _test_blind_sens() -> void:

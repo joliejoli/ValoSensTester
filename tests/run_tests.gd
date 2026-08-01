@@ -55,9 +55,23 @@ func _test_objective() -> void:
 	var outlier := all_hit.duplicate(true)
 	outlier["hit_times"] = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 10.0]
 	_check("MAD 免疫离群值", absf(Objective.score(outlier) - s1) < 1e-9)
-	var overshoot := all_hit.duplicate(true)
-	overshoot["overshoots"] = 12
-	_check("越靶惩罚生效", Objective.score(overshoot) < s1)
+	# 空枪惩罚（用户决策：没中就是没中）：12 靶 12 中但打了 24 枪（12 发空枪）
+	var miss_penalty := all_hit.duplicate(true)
+	miss_penalty["shots"] = 24
+	_check("空枪直接计入准确率（12/(12+12)=0.5）", absf(Objective.accuracy(miss_penalty) - 0.5) < 1e-9, "=%f" % Objective.accuracy(miss_penalty))
+	_check("空枪惩罚降低总分", Objective.score(miss_penalty) < s1, "score=%f" % Objective.score(miss_penalty))
+	# 超时惩罚保持：12 靶 10 中（2 超时，无空枪）
+	var timeout_case := all_hit.duplicate(true)
+	timeout_case["hits"] = 10
+	timeout_case["targets_done"] = 12
+	timeout_case["shots"] = 10
+	timeout_case["hit_times"] = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+	timeout_case["hit_angles"] = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+	_check("超时惩罚保持 10/12", absf(Objective.accuracy(timeout_case) - 10.0 / 12.0) < 1e-9, "=%f" % Objective.accuracy(timeout_case))
+	# 一致性不再含越靶率（避免双重惩罚）
+	var cons_only := all_hit.duplicate(true)
+	cons_only["overshoots"] = 12
+	_check("一致性不再重复惩罚空枪", absf(Objective.consistency_score(cons_only) - Objective.consistency_score(all_hit)) < 1e-9)
 	var near := {"sens": 0.35, "hit_times": [0.2], "hit_angles": [deg_to_rad(8.0)]}
 	var far := {"sens": 0.35, "hit_times": [1.15], "hit_angles": [deg_to_rad(46.0)]}
 	_check("θ 归一化等效效率同分", absf(Objective.speed_score(near) - Objective.speed_score(far)) < 0.01)

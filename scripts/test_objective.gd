@@ -1,15 +1,15 @@
 extends RefCounted
-# 多维目标函数（Phase 4.5 修订版 + 复审 P0-3）
+# 多维目标函数（Phase 4.5 修订版 + 复审 P0-3 + 用户决策：没中就是没中）
 # score = 0.5×accuracy + 0.3×speed + 0.2×consistency
-# accuracy   = hits/targets_done（以靶为单位，超时靶=未命中，恢复时间压力下的区分度）
+# accuracy   = hits / (targets_done + 空枪数)，分母 = 已出靶（每靶至少一次机会，超时靶计失败）
+#             + 打空枪次数（shots - hits，每发空枪都算一次失败——灵敏度不合适会直接体现在准确率）
 # speed      = 1/(1 + median(t×sens/θ))，t×sens 归一化剥离灵敏度物理优势，再除以每靶角距 θ
 #             （等效轨迹效率 = 鼠标物理移动距离/目标角距，8° 靶与 46° 靶同分；无角距数据时退化为 t×sens）
-# consistency= 1/(1 + MAD归一化 + 0.25×越靶率)，MAD/median 为比例，天然无量纲
+# consistency= 1/(1 + MAD归一化)（耗时稳定性；空枪惩罚已并入 accuracy，不再重复计越靶率）
 
 const WEIGHT_ACC := 0.5
 const WEIGHT_SPEED := 0.3
 const WEIGHT_CONS := 0.2
-const OVER_SHOOT_PENALTY := 0.25
 
 static func score(round_data: Dictionary) -> float:
 	var acc := accuracy(round_data)
@@ -19,9 +19,13 @@ static func score(round_data: Dictionary) -> float:
 
 static func accuracy(round_data: Dictionary) -> float:
 	var targets := int(round_data.get("targets_done", 0))
-	if targets <= 0:
+	var hits := int(round_data.get("hits", 0))
+	var shots := int(round_data.get("shots", 0))
+	# 空枪数 = shots - hits（每枪要么命中要么空枪）；超时靶无开火也计入 targets 分母
+	var denom := targets + maxf(shots - hits, 0)
+	if denom <= 0:
 		return 0.0
-	return float(int(round_data.get("hits", 0))) / float(targets)
+	return float(hits) / float(denom)
 
 static func speed_score(round_data: Dictionary) -> float:
 	var times: Array = round_data.get("hit_times", [])
@@ -52,8 +56,7 @@ static func consistency_score(round_data: Dictionary) -> float:
 			for t in times:
 				devs.append(absf(t - med))
 			mad_norm = median(devs) / med
-	var over_norm := float(int(round_data.get("overshoots", 0))) / float(targets)
-	return 1.0 / (1.0 + mad_norm + OVER_SHOOT_PENALTY * over_norm)
+	return 1.0 / (1.0 + mad_norm)
 
 static func median(values: Array) -> float:
 	if values.is_empty():

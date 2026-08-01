@@ -4,6 +4,7 @@ const SceneNav := preload("res://scripts/scene_nav.gd")
 const TargetScene := preload("res://target.tscn")
 const Sfx := preload("res://scripts/sfx.gd")
 const TestPlan := preload("res://scripts/test_plan.gd")
+const Objective := preload("res://scripts/test_objective.gd")
 
 enum State { WARMUP, BANNER, ACTIVE, FINISHED }
 
@@ -452,9 +453,15 @@ func _finish_test() -> void:
 func _build_opt_summary() -> Dictionary:
 	if TestConfig.test_type == TestConfig.TestType.CONSISTENCY:
 		var sens := current_sens
+		# 一致性模式得分 = 各轮平均（修复：此前硬编码 0，历史记录显示 0.00）
+		var mean_score := 0.0
+		for r in TestConfig.round_results:
+			mean_score += Objective.score(r)
+		if not TestConfig.round_results.is_empty():
+			mean_score /= float(TestConfig.round_results.size())
 		return {
 			"best_sens": sens,
-			"score_mean": 0.0,
+			"score_mean": mean_score,
 			"score_low": 0.0,
 			"score_high": 0.0,
 			"mode_label": "一致性测试（固定灵敏度）",

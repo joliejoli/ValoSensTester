@@ -239,16 +239,21 @@ func _test_blind_sens() -> void:
 # ---------- 场景实例化 ----------
 
 func _test_scenes() -> void:
+	var all_ok := true
 	for s in ["res://main.tscn", "res://test_select.tscn", "res://test_config.tscn",
 			"res://test_shoot.tscn", "res://test_result.tscn", "res://history.tscn",
 			"res://settings.tscn", "res://about.tscn"]:
 		var ps := load(s)
+		if ps == null:
+			all_ok = false
+			_check("场景加载失败: %s" % s, false)
+			continue
 		var inst: Node = (ps as PackedScene).instantiate()
 		root.add_child(inst)
 		await process_frame
 		inst.queue_free()
 		await process_frame
-	_check("8 场景实例化无错误", true)
+	_check("8 场景实例化无错误", all_ok)
 
 # ---------- 平坦检测与建议 ----------
 

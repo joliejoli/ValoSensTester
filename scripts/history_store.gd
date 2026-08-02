@@ -46,6 +46,12 @@ static func _write(path: String, records: Array) -> void:
 	f.store_string(JSON.stringify({"version": 1, "records": records}))
 
 static func format_date(ts: int) -> String:
-	# utc=false：显示本地时间（北京时间 UTC+8；此前 utc=true 显示 UTC 差 8 小时）
-	var dt := Time.get_datetime_string_from_unix_time(ts, false)
+	# Godot 4.7 Windows 上 get_datetime_string_from_unix_time(ts, false) 的本地时区
+	# 转换失效（实测仍返回 UTC），改用 get_time_zone_from_system 手动加偏移
+	# bias = 本地 - UTC 的分钟数（中国标准时间 = +480）
+	var bias := 0
+	var tz := Time.get_time_zone_from_system()
+	if tz is Dictionary and tz.has("bias"):
+		bias = int(tz["bias"])
+	var dt := Time.get_datetime_string_from_unix_time(ts + bias * 60, true)
 	return dt.replace("T", " ").substr(0, 16)

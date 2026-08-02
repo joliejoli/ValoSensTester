@@ -28,9 +28,10 @@ var _records: Array = []
 var _filter := "ALL"
 
 func _ready() -> void:
-	# 趋势弹窗尺寸不超过视口 92%/85%（防小窗口出界）
+	# 弹窗尺寸不超过视口 92%/85%（防小窗口出界）
 	var vp := get_viewport_rect().size
 	%TrendCard.custom_minimum_size = Vector2(minf(760.0, vp.x * 0.92), minf(560.0, vp.y * 0.85))
+	%DetailCard.custom_minimum_size = Vector2(minf(900.0, vp.x * 0.92), 0)
 	_records = HistoryStore.load_records()
 	_rebuild()
 

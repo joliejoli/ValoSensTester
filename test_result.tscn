@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="3_top"]
 [ext_resource type="Script" path="res://scripts/esc_nav.gd" id="4_esc"]
 [ext_resource type="Script" path="res://scripts/test_result.gd" id="5_result"]
+[ext_resource type="PackedScene" path="res://ui/background.tscn" id="6_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_help_normal"]
 bg_color = Color(0.129412, 0.168627, 0.219608, 1)
@@ -35,14 +36,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("5_result")
 
-[node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.0588235, 0.0980392, 0.137255, 1)
+[node name="Background" parent="." instance=ExtResource("6_bg")]
 
 [node name="TopBar" parent="." instance=ExtResource("3_top")]
 title_text = "测试结果"
@@ -514,8 +508,13 @@ theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 14
 
-[node name="HelpLabel" type="Label" parent="HelpPanel/Margin"]
+[node name="HelpScroll" type="ScrollContainer" parent="HelpPanel/Margin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="HelpLabel" type="Label" parent="HelpPanel/Margin/HelpScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
 theme_override_font_sizes/font_size = 13
 text = "【瞄准效率评分】= 每靶时间分均值 × 稳定性系数（0~1）

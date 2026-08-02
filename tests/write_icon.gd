@@ -37,6 +37,11 @@ func _init() -> void:
 	var fp := FileAccess.open("res://icon.png", FileAccess.WRITE)
 	fp.store_buffer(src.save_png_to_buffer())
 	fp.close()
+	# 32px 简化版：运行时窗口/任务栏图标用（小尺寸直接清晰，无需 OS 缩放大图）
+	var small := _make_ring_image(32)
+	var fp2 := FileAccess.open("res://icon_small.png", FileAccess.WRITE)
+	fp2.store_buffer(small.save_png_to_buffer())
+	fp2.close()
 	print("icon.ico written: %d sizes, %d bytes" % [SIZES.size(), offset])
 	quit(0)
 

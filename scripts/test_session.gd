@@ -53,7 +53,20 @@ var _settings: Dictionary = {}
 
 func _ready() -> void:
 	load_settings()
+	_apply_native_icon()
 	get_tree().root.size_changed.connect(_on_window_size_changed)
+
+# 任务栏与窗口左上角图标：运行时显式应用 32px 简化版靶子图
+# （config/icon 的 ico 无法被 Image 加载→Godot 默认图标；512px 大图缩放小图标
+# 会糊。32px 源图经 OS 缩到 16px 仍清晰，窗口标题栏 32px 直接用原尺寸）
+func _apply_native_icon() -> void:
+	if DisplayServer.get_name() != "windows":
+		return
+	var img := Image.load_from_file("res://icon_small.png")
+	if img == null:
+		return
+	DisplayServer.set_icon(img)
+	get_window().icon = ImageTexture.create_from_image(img)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F11:

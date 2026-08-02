@@ -71,6 +71,8 @@ func add_result(round_data: Dictionary) -> void:
 #   1) 已测点得分范围 < σ_n(0.08)：全部实测挤在一起，无信号
 #   2) GP 后验曲线信号强度（峰值-谷值均值）< σ_n：实测范围可能因噪声尖峰超阈值
 #      （如 0.13），但模型拟合后曲线平坦（峰谷差仅 0.03），此时 EI 推荐点具有任意性
+# 非平坦推荐：GP 后验均值曲线的峰值位置（不用 EI 采集点——EI 在无数据边缘区
+# 会因方差贡献把推荐推离数据区，如推到 sens_min 边缘；均值峰值稳健且在数据区内）
 func best_estimate() -> Dictionary:
 	if _bo.sample_count() == 0:
 		var mid := (_sens_min + _sens_max) / 2.0
@@ -87,21 +89,21 @@ func best_estimate() -> Dictionary:
 		if y > best_y:
 			best_y = y
 			best_x = _bo.xs[i]
-	if y_max - y_min < 0.08 or _gp_signal_strength() < 0.08:
+	if y_max - y_min < 0.08:
 		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
-	var candidates := _candidates()
-	var rec: Dictionary = _bo.suggest(candidates, BayesOpt.MODE_EI, UCB_KAPPA)
-	return {"sens": rec["x"], "mean": rec["mean"], "variance": rec["variance"], "flat": false}
-
-# GP 后验均值曲线在灵敏度范围内的峰值-谷值（信号强度；< σ_n=0.08 视为平坦）
-func _gp_signal_strength() -> float:
-	var peak := -INF
+	# 一次网格扫描完成信号强度判定 + 均值峰值定位
+	var peak_x := 0.0
+	var peak_y := -INF
 	var trough := INF
 	for c in _candidates():
 		var p := _bo.predict(c)
-		peak = maxf(peak, p["mean"])
+		if p["mean"] > peak_y:
+			peak_y = p["mean"]
+			peak_x = c
 		trough = minf(trough, p["mean"])
-	return peak - trough
+	if peak_y - trough < 0.08:
+		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
+	return {"sens": peak_x, "mean": peak_y, "variance": _bo.predict(peak_x)["variance"], "flat": false}
 
 # GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]
 func gp_predictions(points: Array) -> Array:

@@ -451,6 +451,22 @@ func _test_flat_detection() -> void:
 	var est2 := user_like.best_estimate()
 	_check("实测范围≥0.08但GP平坦 → flat=true", est2.get("flat", false), "sens=%f flat=%s" % [est2["sens"], est2["flat"]])
 	_check("平坦时推荐实测最高点 0.49", absf(float(est2["sens"]) - 0.49) < 0.005, "sens=%f" % est2["sens"])
+	# 非平坦推荐 = GP 均值峰值（不用 EI：EI 在边缘无数据区会推离数据区）
+	# 用户最新 10 轮：低段占优、0.70 塌陷，峰值应在 0.2~0.4 数据区内而非 0.1 边缘
+	var latest := TestPlan.new()
+	latest.begin(false, 0.1, 0.9, 10)
+	var lx := [0.60, 0.40, 0.50, 0.30, 0.20, 0.24, 0.33, 0.37, 0.70, 0.44]
+	var ly := [0.441, 0.420, 0.417, 0.460, 0.508, 0.518, 0.468, 0.521, 0.315, 0.394]
+	for i in 10:
+		var r := _make_round(lx[i], 12)
+		var t: float = (1.0 / ly[i] - 1.0) * 0.3 / lx[i]
+		var times: Array = []
+		for j in 12:
+			times.append(t)
+		r["hit_times"] = times
+		latest.add_result(r)
+	var est3 := latest.best_estimate()
+	_check("非平坦推荐=GP均值峰值（数据区内非边缘）", not est3.get("flat", false) and float(est3["sens"]) >= 0.18 and float(est3["sens"]) <= 0.42, "sens=%f flat=%s" % [est3["sens"], est3["flat"]])
 	var p := Advice.diagnose({"accuracy": 0.6, "median_hit": 0.7, "median_eff": 0.6, "micro_adjusts": 5, "track_accuracy": -1.0, "switch_secs": -1.0}, [{}])
 	_check("成功率 60% 触发命中率诊断", p.any(func(x): return x["tag"] == "slow_aim"))
 	# 轮间稳定性阈值（0.22，仿真校准）：稳定玩家不触发，真起伏触发

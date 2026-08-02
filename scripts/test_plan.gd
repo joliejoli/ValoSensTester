@@ -117,7 +117,7 @@ func best_estimate() -> Dictionary:
 			plateau_best_y = float(_bo.ys[i])
 			plateau_best_x = _bo.xs[i]
 	if plateau_best_x >= 0.0:
-		return {"sens": plateau_best_x, "mean": plateau_best_y, "variance": 0.0, "flat": false}
+		return {"sens": plateau_best_x, "mean": plateau_best_y, "variance": _bo.predict(plateau_best_x)["variance"], "flat": false}
 	return {"sens": peak_x, "mean": peak_y, "variance": _bo.predict(peak_x)["variance"], "flat": false}
 
 # GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]

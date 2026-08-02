@@ -42,3 +42,7 @@
 - **每次代码改动完成后**（验证通过后），自动执行 `git add -A` + `git commit`，提交信息用中文简述本次改动
 - **同步更新 AGENTS.md**：每次改动后检查本节「项目结构」「开发命令」等内容是否过时，如有变化立即更新
 - 改完代码后先用 `D:\godotstudy\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe --headless --path "." --quit` 验证无脚本错误，再提交
+
+## 约定
+
+- **你没有识图能力**, 禁止沟通中出现截图发我等幻觉。

@@ -2,9 +2,8 @@ extends Node
 
 const SETTINGS_PATH := "user://settings.cfg"
 
-const BASE_UI_WIDTH := 1280.0
-const BASE_UI_HEIGHT := 720.0
-const MIN_UI_SCALE := 0.5
+const BASE_UI_WIDTH := 1280
+const BASE_UI_HEIGHT := 720
 
 # 测试场景常量（Phase 3/4）
 # 每轮靶数：信度评估结论（8 靶噪声 SD 0.083 > 信号，提到 12 靶）
@@ -108,11 +107,16 @@ func get_fov() -> float:
 
 func apply_ui_scale() -> void:
 	var win := get_window()
-	if ui_scale > 0.0:
-		win.content_scale_factor = ui_scale
-		return
-	var auto: float = min(win.size.x / BASE_UI_WIDTH, win.size.y / BASE_UI_HEIGHT)
-	win.content_scale_factor = max(auto, MIN_UI_SCALE)
+	# canvas_items stretch 模式下禁止手动设置 content_scale_factor：与引擎缩放
+	# 系统冲突会导致部分锚点布局不再更新（用户 4K 双屏 150% 缩放下标题栏宽度
+	# 变 0、标题左移出屏被裁）。改用 content_scale_size（stretch 基尺寸）实现
+	# UI 缩放：100%/自动 = 项目基尺寸 1280×720；125% = 1024×576（内容放大 1.25）
+	var base_w := BASE_UI_WIDTH
+	var base_h := BASE_UI_HEIGHT
+	if ui_scale > 0.0 and ui_scale < 1.0:
+		base_w = roundi(BASE_UI_WIDTH / ui_scale)
+		base_h = roundi(BASE_UI_HEIGHT / ui_scale)
+	win.content_scale_size = Vector2i(base_w, base_h)
 
 func _on_window_size_changed() -> void:
 	if ui_scale <= 0.0:

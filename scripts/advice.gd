@@ -184,6 +184,8 @@ static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advi
 		float(metrics.median_hit),
 		float(metrics.get("micro_adjusts", 0)) / float(maxf(tg, 1)),
 	])
+	if s.get("edge", false):
+		lines.append("警告：推荐值位于灵敏度范围边缘，真实最佳可能超出测试范围，建议扩大范围重测")
 	if problems.is_empty():
 		lines.append("建议：当前表现均衡，可在推荐灵敏度下继续巩固")
 	else:

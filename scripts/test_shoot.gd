@@ -507,6 +507,7 @@ func _build_opt_summary() -> Dictionary:
 		"score_low": low,
 		"score_high": high,
 		"flat": est.get("flat", false),
+		"edge": est.get("edge", false),
 		"mode_label": _mode_label(sens),
 		"dpi": TestConfig.get_dpi(),
 		"edpi": snappedf(sens * TestConfig.get_dpi(), 1.0),

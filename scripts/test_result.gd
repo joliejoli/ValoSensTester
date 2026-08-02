@@ -70,6 +70,11 @@ func _ready() -> void:
 			ci_label.text = "得分 95%% 置信区间 %.2f ~ %.2f" % [float(s.get("score_low", 0.0)), float(s.get("score_high", 0.0))]
 			flat_label.text = "评分 = 每靶时间分均值 × 稳定性系数 · 已剥离灵敏度物理差异（同一灵敏度内越快越高）"
 			flat_label.visible = true
+		# 边缘推荐警告：推荐点靠近灵敏度范围边界时 GP 无外侧数据支撑，真实最优可能超出范围
+		if s.get("edge", false):
+			flat_label.text = "警告：推荐值位于灵敏度测试范围边缘，真实最佳可能超出当前范围（0.1~0.9）——建议扩大范围重测后再定灵敏度"
+			flat_label.modulate = Color(1, 0.6, 0.3)
+			flat_label.visible = true
 	var edpi := float(s.get("edpi", 0.0))
 	dpi_label.text = "测试时 DPI %d · eDPI ≈ %d（参考 800 DPI 时 %.1f cm/360°）" % [
 		int(s.get("dpi", 0)),

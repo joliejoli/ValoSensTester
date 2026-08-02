@@ -77,10 +77,17 @@ func add_result(round_data: Dictionary) -> void:
 # 最高的数据点（数据直接证据）——孤立尖峰（平滑值显著低于峰值）自动排除，
 # 有多个数据点支撑的高点（如 0.24 两轮 0.518/0.517）胜出
 const PEAK_STEP := 0.001
+# 边缘判定阈值：推荐点距灵敏度范围边界 < 0.1 时视为边缘推荐（GP 在边界外
+# 无数据，无法区分"最优真在边缘"与"最优在范围外"，需提示用户扩大范围重测）
+const EDGE_MARGIN := 0.1
+
+func _edge_flag(sens: float) -> bool:
+	return sens - _sens_min < EDGE_MARGIN or _sens_max - sens < EDGE_MARGIN
+
 func best_estimate() -> Dictionary:
 	if _bo.sample_count() == 0:
 		var mid := (_sens_min + _sens_max) / 2.0
-		return {"sens": mid, "mean": 0.0, "variance": 0.0, "flat": false}
+		return {"sens": mid, "mean": 0.0, "variance": 0.0, "flat": false, "edge": false}
 	var ys: Array = _bo.ys
 	var y_min := INF
 	var y_max := -INF
@@ -94,7 +101,7 @@ func best_estimate() -> Dictionary:
 			best_y = y
 			best_x = _bo.xs[i]
 	if y_max - y_min < 0.08:
-		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
+		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true, "edge": _edge_flag(best_x)}
 	# 一次网格扫描完成信号强度判定 + 均值峰值定位（0.001 步长）
 	var peak_x := 0.0
 	var peak_y := -INF
@@ -108,7 +115,7 @@ func best_estimate() -> Dictionary:
 		trough = minf(trough, p["mean"])
 		x += PEAK_STEP
 	if peak_y - trough < 0.08:
-		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
+		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true, "edge": _edge_flag(best_x)}
 	# 高原内实测最高数据点
 	var plateau_best_x := -1.0
 	var plateau_best_y := -INF
@@ -117,8 +124,8 @@ func best_estimate() -> Dictionary:
 			plateau_best_y = float(_bo.ys[i])
 			plateau_best_x = _bo.xs[i]
 	if plateau_best_x >= 0.0:
-		return {"sens": plateau_best_x, "mean": plateau_best_y, "variance": _bo.predict(plateau_best_x)["variance"], "flat": false}
-	return {"sens": peak_x, "mean": peak_y, "variance": _bo.predict(peak_x)["variance"], "flat": false}
+		return {"sens": plateau_best_x, "mean": plateau_best_y, "variance": _bo.predict(plateau_best_x)["variance"], "flat": false, "edge": _edge_flag(plateau_best_x)}
+	return {"sens": peak_x, "mean": peak_y, "variance": _bo.predict(peak_x)["variance"], "flat": false, "edge": _edge_flag(peak_x)}
 
 # GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]
 func gp_predictions(points: Array) -> Array:

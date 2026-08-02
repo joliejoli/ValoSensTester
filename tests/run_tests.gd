@@ -484,6 +484,23 @@ func _test_flat_detection() -> void:
 		latest2.add_result(r)
 	var est4 := latest2.best_estimate()
 	_check("0.24 实测最高 → 推荐 0.24（非平滑假峰值）", absf(float(est4["sens"]) - 0.24) < 0.005, "sens=%f flat=%s" % [est4["sens"], est4["flat"]])
+	# 边缘推荐检测：低端实测最高（0.10/0.12 高分）→ 推荐贴边界 → edge=true
+	var edge_like := TestPlan.new()
+	edge_like.begin(false, 0.1, 0.9, 10)
+	var ex := [0.60, 0.40, 0.50, 0.30, 0.20, 0.10, 0.33, 0.37, 0.44, 0.70]
+	var ey := [0.30, 0.35, 0.32, 0.40, 0.55, 0.62, 0.52, 0.48, 0.42, 0.28]
+	for i in 10:
+		var r := _make_round(ex[i], 12)
+		var t: float = (1.0 / ey[i] - 1.0) * 0.3 / ex[i]
+		var times: Array = []
+		for j in 12:
+			times.append(t)
+		r["hit_times"] = times
+		edge_like.add_result(r)
+	var est5 := edge_like.best_estimate()
+	_check("边缘推荐检测 edge=true（推荐贴 0.1 边界）", est5.get("edge", false), "sens=%f edge=%s" % [est5["sens"], est5["edge"]])
+	# 数据区内推荐（0.24 甜区）不触发边缘
+	_check("数据区内推荐 edge=false", not est4.get("edge", false), "sens=%f edge=%s" % [est4["sens"], est4["edge"]])
 	var p := Advice.diagnose({"accuracy": 0.6, "median_hit": 0.7, "median_eff": 0.6, "micro_adjusts": 5, "track_accuracy": -1.0, "switch_secs": -1.0}, [{}])
 	_check("成功率 60% 触发命中率诊断", p.any(func(x): return x["tag"] == "slow_aim"))
 	# 轮间稳定性阈值（0.22，仿真校准）：稳定玩家不触发，真起伏触发

@@ -71,8 +71,12 @@ func add_result(round_data: Dictionary) -> void:
 #   1) 已测点得分范围 < σ_n(0.08)：全部实测挤在一起，无信号
 #   2) GP 后验曲线信号强度（峰值-谷值均值）< σ_n：实测范围可能因噪声尖峰超阈值
 #      （如 0.13），但模型拟合后曲线平坦（峰谷差仅 0.03），此时 EI 推荐点具有任意性
-# 非平坦推荐：GP 后验均值曲线的峰值位置（不用 EI 采集点——EI 在无数据边缘区
-# 会因方差贡献把推荐推离数据区，如推到 sens_min 边缘；均值峰值稳健且在数据区内）
+# 高原修正：GP 强平滑会把数据密集区（如 0.2~0.3）的真实差异抹平为一条平带
+# （均值差 < 0.001 而实测差 0.05），此时峰值位置由浮点微差决定（假峰值）。
+# 修正：GP 均值 ≥ 峰值-0.02 的区间视为"模型认可的高原"，在其中取实测得分
+# 最高的数据点（数据直接证据）——孤立尖峰（平滑值显著低于峰值）自动排除，
+# 有多个数据点支撑的高点（如 0.24 两轮 0.518/0.517）胜出
+const PEAK_STEP := 0.001
 func best_estimate() -> Dictionary:
 	if _bo.sample_count() == 0:
 		var mid := (_sens_min + _sens_max) / 2.0
@@ -91,18 +95,29 @@ func best_estimate() -> Dictionary:
 			best_x = _bo.xs[i]
 	if y_max - y_min < 0.08:
 		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
-	# 一次网格扫描完成信号强度判定 + 均值峰值定位
+	# 一次网格扫描完成信号强度判定 + 均值峰值定位（0.001 步长）
 	var peak_x := 0.0
 	var peak_y := -INF
 	var trough := INF
-	for c in _candidates():
-		var p := _bo.predict(c)
+	var x := _sens_min
+	while x <= _sens_max + PEAK_STEP * 0.5:
+		var p := _bo.predict(x)
 		if p["mean"] > peak_y:
 			peak_y = p["mean"]
-			peak_x = c
+			peak_x = x
 		trough = minf(trough, p["mean"])
+		x += PEAK_STEP
 	if peak_y - trough < 0.08:
 		return {"sens": best_x, "mean": best_y, "variance": 0.0, "flat": true}
+	# 高原内实测最高数据点
+	var plateau_best_x := -1.0
+	var plateau_best_y := -INF
+	for i in _bo.xs.size():
+		if _bo.predict(_bo.xs[i])["mean"] >= peak_y - 0.02 and float(_bo.ys[i]) > plateau_best_y:
+			plateau_best_y = float(_bo.ys[i])
+			plateau_best_x = _bo.xs[i]
+	if plateau_best_x >= 0.0:
+		return {"sens": plateau_best_x, "mean": plateau_best_y, "variance": 0.0, "flat": false}
 	return {"sens": peak_x, "mean": peak_y, "variance": _bo.predict(peak_x)["variance"], "flat": false}
 
 # GP 后验曲线（Phase 5.2 曲线图用）：points 为灵敏度数组，返回 [{x, mean, variance}]

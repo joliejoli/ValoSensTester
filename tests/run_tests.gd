@@ -467,6 +467,23 @@ func _test_flat_detection() -> void:
 		latest.add_result(r)
 	var est3 := latest.best_estimate()
 	_check("非平坦推荐=GP均值峰值（数据区内非边缘）", not est3.get("flat", false) and float(est3["sens"]) >= 0.18 and float(est3["sens"]) <= 0.42, "sens=%f flat=%s" % [est3["sens"], est3["flat"]])
+	# 高原修正：0.24 有数据支撑（0.508/0.518 两轮高点），0.37 是孤立尖峰（邻居 0.395/0.445）→ 推荐 0.24
+	_check("高原内实测最高点优先（推荐 0.24）", absf(float(est3["sens"]) - 0.24) < 0.005, "sens=%f" % est3["sens"])
+	# 12:22 数据：0.24 两次实测都最高（直接证据）→ 推荐 0.24 而非平滑峰值
+	var latest2 := TestPlan.new()
+	latest2.begin(false, 0.1, 0.9, 10)
+	var lx2 := [0.50, 0.40, 0.60, 0.30, 0.20, 0.24, 0.33, 0.37, 0.44, 0.70]
+	var ly2 := [0.462, 0.395, 0.337, 0.442, 0.488, 0.517, 0.445, 0.472, 0.429, 0.326]
+	for i in 10:
+		var r := _make_round(lx2[i], 12)
+		var t: float = (1.0 / ly2[i] - 1.0) * 0.3 / lx2[i]
+		var times: Array = []
+		for j in 12:
+			times.append(t)
+		r["hit_times"] = times
+		latest2.add_result(r)
+	var est4 := latest2.best_estimate()
+	_check("0.24 实测最高 → 推荐 0.24（非平滑假峰值）", absf(float(est4["sens"]) - 0.24) < 0.005, "sens=%f flat=%s" % [est4["sens"], est4["flat"]])
 	var p := Advice.diagnose({"accuracy": 0.6, "median_hit": 0.7, "median_eff": 0.6, "micro_adjusts": 5, "track_accuracy": -1.0, "switch_secs": -1.0}, [{}])
 	_check("成功率 60% 触发命中率诊断", p.any(func(x): return x["tag"] == "slow_aim"))
 	# 轮间稳定性阈值（0.22，仿真校准）：稳定玩家不触发，真起伏触发

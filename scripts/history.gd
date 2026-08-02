@@ -62,7 +62,7 @@ func _make_row(rec: Dictionary) -> Control:
 	type.modulate = Color(1, 0.368627, 0.4) if rec.get("type", "") == "PSA" else Color(0.6, 0.85, 1)
 	hbox.add_child(type)
 	var sens := Label.new()
-	sens.text = "灵敏度 %.2f" % float(rec.get("sens", 0.0))
+	sens.text = "灵敏度 %.3f" % float(rec.get("sens", 0.0))
 	sens.custom_minimum_size = Vector2(140, 0)
 	sens.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(sens)

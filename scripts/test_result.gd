@@ -48,14 +48,14 @@ func _ready() -> void:
 		mode_label.text = "无优化数据（异常退出）"
 		return
 	var is_consistency: bool = s.get("is_consistency", false)
-	rec_label.text = "%.2f" % float(s.get("best_sens", 0.0))
+	rec_label.text = "%.3f" % float(s.get("best_sens", 0.0))
 	if is_consistency:
 		mode_label.text = s.get("mode_label", "")
 		score_label.text = "固定灵敏度测试 · %d 轮" % int(s.get("samples", 0))
 		ci_label.text = "推荐灵敏度即测试灵敏度"
 	else:
 		mode_label.text = "%s · 预估得分 %.2f" % [s.get("mode_label", ""), float(s.get("score_mean", 0.0))]
-		score_label.text = "推荐灵敏度 %.2f" % float(s.get("best_sens", 0.0))
+		score_label.text = "推荐灵敏度 %.3f" % float(s.get("best_sens", 0.0))
 		if s.get("flat", false):
 			ci_label.text = "各灵敏度得分差异小于测量噪声（平坦曲线）"
 			flat_label.text = "提示：不同灵敏度表现接近，推荐值为已测最高分点，也可按手感选择任意舒适灵敏度"

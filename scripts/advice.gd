@@ -169,7 +169,7 @@ static func share_text(s: Dictionary, metrics: Dictionary, problems: Array, advi
 	lines.append("【无畏契约灵敏度测试结果】")
 	lines.append("类型：%s（%d 轮）" % ["一致性测试" if is_consistency else "灵敏度测试", rounds.size()])
 	if not is_consistency:
-		lines.append("推荐灵敏度：%.2f（游戏内）" % float(s.get("best_sens", 0.0)))
+		lines.append("推荐灵敏度：%.3f（游戏内）" % float(s.get("best_sens", 0.0)))
 	lines.append("eDPI ≈ %d · 参考 800 DPI 时 %.1f cm/360°" % [int(s.get("edpi", 0)), _edpi_to_cm(float(s.get("edpi", 0.0)))])
 	lines.append("综合评分：%.2f（95%% CI %.2f~%.2f）" % [
 		float(s.get("score_mean", 0.0)),

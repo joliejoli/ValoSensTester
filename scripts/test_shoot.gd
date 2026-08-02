@@ -502,7 +502,7 @@ func _build_opt_summary() -> Dictionary:
 	var low := clampf(mean - 1.96 * sqrt(var_sq), 0.0, 1.0)
 	var high := clampf(mean + 1.96 * sqrt(var_sq), 0.0, 1.0)
 	return {
-		"best_sens": snappedf(sens, 0.01),
+		"best_sens": snappedf(sens, 0.001),
 		"score_mean": mean,
 		"score_low": low,
 		"score_high": high,
@@ -518,10 +518,10 @@ func _build_opt_summary() -> Dictionary:
 # 发力习惯因人而异，结果页注明基于本次测试任务）
 func _mode_label(sens: float) -> String:
 	if sens < 0.30:
-		return "本测试中表现偏向低灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
+		return "本测试中表现偏向低灵敏度 · 建议在 %.3f±0.05 范围内微调" % sens
 	if sens > 0.60:
-		return "本测试中表现偏向高灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
-	return "本测试中表现偏向中灵敏度 · 建议在 %.2f±0.05 范围内微调" % sens
+		return "本测试中表现偏向高灵敏度 · 建议在 %.3f±0.05 范围内微调" % sens
+	return "本测试中表现偏向中灵敏度 · 建议在 %.3f±0.05 范围内微调" % sens
 
 func _banner_wait() -> void:
 	await get_tree().create_timer(1.8).timeout

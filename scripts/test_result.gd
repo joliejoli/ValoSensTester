@@ -281,7 +281,7 @@ func _build_table() -> void:
 		c.queue_free()
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
-	for text in ["轮次", "灵敏度", "命中率", "中位耗时(s)", "修正(s)", "得分"]:
+	for text in ["轮次", "灵敏度", "命中率", "中位耗时(s)", "微调(次)", "得分"]:
 		var lab := Label.new()
 		lab.text = text
 		lab.custom_minimum_size = Vector2(100, 0)
@@ -297,7 +297,7 @@ func _build_table() -> void:
 			"%.2f" % float(r.get("sens", 0.0)),
 			"%d/%d" % [int(r.get("hits", 0)), td],
 			"%.2f" % TestMetrics.median(r.get("hit_times", [])),
-			"%.2f" % TestMetrics.median(r.get("correction_times", [])),
+			"%.1f" % (float(int(r.get("micro_adjusts", 0))) / float(maxf(td, 1))),
 			"%.2f" % _round_score(r),
 		]
 		for text in cells:

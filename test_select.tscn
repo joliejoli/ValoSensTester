@@ -1,10 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/test_select.gd" id="1_select"]
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="3_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="4_top"]
-[ext_resource type="PackedScene" path="res://ui/background.tscn" id="5_bg"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_type"]
 
@@ -18,7 +17,14 @@ grow_vertical = 2
 theme = ExtResource("3_theme")
 script = ExtResource("1_select")
 
-[node name="Background" parent="." instance=ExtResource("5_bg")]
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
 [node name="TopBar" parent="." instance=ExtResource("4_top")]
 title_text = "测试选择"

@@ -1,11 +1,10 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/test_config.gd" id="1_config"]
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="2_back"]
 [ext_resource type="Script" path="res://scripts/nav_button.gd" id="3_nav"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="4_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="5_top"]
-[ext_resource type="PackedScene" path="res://ui/background.tscn" id="6_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_normal"]
 bg_color = Color(0.129412, 0.168627, 0.219608, 1)
@@ -53,7 +52,14 @@ grow_vertical = 2
 theme = ExtResource("4_theme")
 script = ExtResource("1_config")
 
-[node name="Background" parent="." instance=ExtResource("6_bg")]
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
 [node name="TopBar" parent="." instance=ExtResource("5_top")]
 title_text = "测试参数配置"

@@ -1,11 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/back_button.gd" id="1_back"]
 [ext_resource type="Theme" path="res://ui/theme_valorant.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="3_top"]
 [ext_resource type="Script" path="res://scripts/esc_nav.gd" id="4_esc"]
 [ext_resource type="Script" path="res://scripts/test_result.gd" id="5_result"]
-[ext_resource type="PackedScene" path="res://ui/background.tscn" id="6_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_help_normal"]
 bg_color = Color(0.129412, 0.168627, 0.219608, 1)
@@ -36,7 +35,14 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("5_result")
 
-[node name="Background" parent="." instance=ExtResource("6_bg")]
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0980392, 0.137255, 1)
 
 [node name="TopBar" parent="." instance=ExtResource("3_top")]
 title_text = "测试结果"

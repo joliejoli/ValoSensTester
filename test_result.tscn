@@ -262,7 +262,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.5)
 theme_override_font_sizes/font_size = 12
-text = "综合评分（0-1）"
+text = "瞄准效率评分（0-1）"
 horizontal_alignment = 1
 
 [node name="MetricScore" type="Label" parent="Scroll/Center/VBox/Metrics/Box5/V5"]
@@ -516,20 +516,22 @@ theme_override_constants/margin_bottom = 14
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92549, 0.909804, 0.882353, 0.95)
 theme_override_font_sizes/font_size = 13
-text = "【综合评分】= 平均每靶得分（0~1）
+text = "【瞄准效率评分】= 每靶时间分均值 × 稳定性系数（0~1）
 每靶只允许一次单击判定：
-命中 → 按完成时间打分（1/(1+轨迹效率)，越快越高）
+命中 → 按完成时间打分（1/(1+轨迹效率 t×sens/θ)，越快越高）
 未命中 / 超时 → 0 分（没中就是没中）
+轨迹效率已剥离灵敏度物理差异：同一灵敏度内越快得分越高，
+跨灵敏度公平比较"你控制准星的质量"（微调不直接扣分，其代价已计入耗时）
 成功率 = 命中 / (命中+失败点击+超时)
 
 【结果页曲线】
-灰点 = 每轮实测得分；粉线 = 预测得分曲线；红色阴影 = 95% 置信区间（越宽越不确定，两端为未测区域）
+灰点 = 每轮实测效率分；粉线 = 预测得分曲线；红色阴影 = 95% 置信区间（越宽越不确定，两端为未测区域）
 峰值位置 = 推荐灵敏度
 
 【详细报告弹窗】
-图1 综合评分：同上放大版
+图1 瞄准效率：同上放大版
 图2 命中率：成功率随灵敏度的变化（看准不准）
-图3 学习曲线：每轮得分走势（波动大 = 状态不稳，结果可信度打折）"
+图3 学习曲线：每轮效率分走势（波动大 = 状态不稳，结果可信度打折）"
 autowrap_mode = 2
 
 [connection signal="pressed" from="BottomBar/HistoryButton" to="." method="_on_history_button_pressed"]

@@ -67,7 +67,7 @@ func _make_row(rec: Dictionary) -> Control:
 	sens.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(sens)
 	var score := Label.new()
-	score.text = "得分 %.2f" % float(rec.get("score_mean", 0.0))
+	score.text = "效率分 %.2f" % float(rec.get("score_mean", 0.0))
 	score.custom_minimum_size = Vector2(110, 0)
 	score.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hbox.add_child(score)
@@ -105,7 +105,7 @@ func _show_detail(rec: Dictionary) -> void:
 	var total_targets := 0
 	for r in rounds:
 		total_targets += int(r.get("targets_done", 0))
-	detail_metrics.text = "综合评分 %.2f（95%% CI %.2f~%.2f）\n成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
+	detail_metrics.text = "瞄准效率评分 %.2f（95%% CI %.2f~%.2f）\n成功率 %.1f%% · 中位命中 %.2fs · 每靶微调 %.1f 次" % [
 		float(rec.get("score_mean", 0.0)),
 		float(rec.get("score_low", 0.0)),
 		float(rec.get("score_high", 0.0)),
@@ -189,10 +189,10 @@ func _on_trend_pressed() -> void:
 	c1.add_series(sens_pts, Color(1, 0.368627, 0.4), "灵敏度")
 	trend_box.add_child(c1)
 	var c2 := Chart.new()
-	c2.title = "综合得分变化趋势"
+	c2.title = "瞄准效率变化趋势"
 	c2.y_auto = true
 	c2.custom_minimum_size = Vector2(0, 210)
-	c2.add_series(score_pts, Color(0.6, 0.95, 0.7), "得分")
+	c2.add_series(score_pts, Color(0.6, 0.95, 0.7), "效率分")
 	trend_box.add_child(c2)
 	trend_popup.visible = true
 
@@ -219,7 +219,7 @@ func _compare_text(rec: Dictionary) -> String:
 		prev_targets += int(r.get("targets_done", 0))
 	for r in rec.get("round_results", []):
 		cur_targets += int(r.get("targets_done", 0))
-	return "对比上一次 %s（%s）：\n灵敏度 %s · 得分 %s · 命中率 %s · 每靶微调 %s" % [
+	return "对比上一次 %s（%s）：\n灵敏度 %s · 效率分 %s · 命中率 %s · 每靶微调 %s" % [
 		TYPE_LABEL.get(rec.get("type", ""), ""),
 		HistoryStore.format_date(prev_ts),
 		_arrow(float(prev.get("sens", 0.0)), float(rec.get("sens", 0.0)), "%.2f"),

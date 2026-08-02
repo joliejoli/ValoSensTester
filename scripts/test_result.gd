@@ -53,14 +53,19 @@ func _ready() -> void:
 		mode_label.text = s.get("mode_label", "")
 		score_label.text = "固定灵敏度测试 · %d 轮" % int(s.get("samples", 0))
 		ci_label.text = "推荐灵敏度即测试灵敏度"
+		flat_label.text = "评分 = 每靶时间分均值 × 稳定性系数 · 已剥离灵敏度物理差异（同一灵敏度内越快越高）"
+		flat_label.visible = true
 	else:
-		mode_label.text = "%s · 预估得分 %.2f" % [s.get("mode_label", ""), float(s.get("score_mean", 0.0))]
+		mode_label.text = "%s · 预估效率分 %.2f" % [s.get("mode_label", ""), float(s.get("score_mean", 0.0))]
 		score_label.text = "推荐灵敏度 %.3f" % float(s.get("best_sens", 0.0))
 		if s.get("flat", false):
 			ci_label.text = "各灵敏度得分差异小于测量噪声（平坦曲线）"
 			flat_label.text = "提示：不同灵敏度表现接近，推荐值为已测最高分点，也可按手感选择任意舒适灵敏度"
+			flat_label.visible = true
 		else:
 			ci_label.text = "得分 95%% 置信区间 %.2f ~ %.2f" % [float(s.get("score_low", 0.0)), float(s.get("score_high", 0.0))]
+			flat_label.text = "评分 = 每靶时间分均值 × 稳定性系数 · 已剥离灵敏度物理差异（同一灵敏度内越快越高）"
+			flat_label.visible = true
 	var edpi := float(s.get("edpi", 0.0))
 	dpi_label.text = "测试时 DPI %d · eDPI ≈ %d（参考 800 DPI 时 %.1f cm/360°）" % [
 		int(s.get("dpi", 0)),
@@ -105,7 +110,7 @@ func _build_page_chart() -> void:
 	var rounds: Array = TestConfig.round_results
 	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
 	var c1 := Chart.new()
-	c1.title = "灵敏度-综合评分（阴影 = 95% 置信区间）"
+	c1.title = "灵敏度-瞄准效率（阴影 = 95% 置信区间）"
 	# y 轴自适应：命中慢的轮 score 会贴底（0-1 固定轴下难以看清真实差异），按数据范围缩放
 	c1.y_auto = true
 	c1.custom_minimum_size = Vector2(0, 160)
@@ -242,7 +247,7 @@ func _build_charts() -> void:
 	var is_consistency: bool = TestConfig.opt_summary.get("is_consistency", false)
 	# 1) 灵敏度-综合评分：GP 后验均值 + 95% CI 带 + 实测散点
 	var c1 := Chart.new()
-	c1.title = "灵敏度-综合评分（GP 后验，阴影 = 95% CI）"
+	c1.title = "灵敏度-瞄准效率（GP 后验，阴影 = 95% CI）"
 	c1.y_auto = true
 	c1.custom_minimum_size = Vector2(0, 190)
 	if not is_consistency and not rounds.is_empty():
@@ -267,13 +272,13 @@ func _build_charts() -> void:
 	charts_box.add_child(c2)
 	# 3) 学习曲线（轮次-得分）
 	var c3 := Chart.new()
-	c3.title = "学习曲线（轮次-得分）"
+	c3.title = "学习曲线（轮次-效率分）"
 	c3.y_auto = true
 	c3.custom_minimum_size = Vector2(0, 150)
 	var lc: Array = []
 	for i in rounds.size():
 		lc.append(Vector2(i + 1, _round_score(rounds[i])))
-	c3.add_series(lc, Color(0.6, 0.95, 0.7), "得分")
+	c3.add_series(lc, Color(0.6, 0.95, 0.7), "效率分")
 	charts_box.add_child(c3)
 
 func _build_table() -> void:
@@ -281,7 +286,7 @@ func _build_table() -> void:
 		c.queue_free()
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 16)
-	for text in ["轮次", "灵敏度", "命中率", "中位耗时(s)", "微调(次)", "得分"]:
+	for text in ["轮次", "灵敏度", "命中率", "中位耗时(s)", "微调(次)", "效率分"]:
 		var lab := Label.new()
 		lab.text = text
 		lab.custom_minimum_size = Vector2(100, 0)

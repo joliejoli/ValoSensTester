@@ -89,11 +89,14 @@ static func diagnose(metrics: Dictionary, rounds: Array) -> Array:
 		for s in scores:
 			var d: float = s - mean
 			var_y += d * d
-		if mean > 0.0 and sqrt(var_y / float(scores.size() - 1)) / mean > 0.12:
+		# 阈值 0.22 由仿真校准：12 靶/轮 + 每靶高分差（0 或 0.3~0.8）下，
+		# 稳定玩家（各轮同分布）轮间 CV 的 p95 ≈ 0.17；0.12 时假阳性 39%，
+		# 0.22 时压到 0~6%，真·状态起伏（CV > 0.22）仍可检出
+		if mean > 0.0 and sqrt(var_y / float(scores.size() - 1)) / mean > 0.22:
 			problems.append({
 				"tag": "unstable",
 				"title": "轮间稳定性波动较大",
-				"detail": "各轮得分波动幅度超过均值 12%，状态起伏明显，适合固定灵敏度下多练稳定手感。",
+				"detail": "各轮得分波动幅度超过均值 22%（明显超出正常测试噪声），状态起伏显著，适合固定灵敏度下多练稳定手感。",
 			})
 	return problems
 

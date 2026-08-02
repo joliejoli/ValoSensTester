@@ -437,3 +437,13 @@ func _test_flat_detection() -> void:
 	_check("有信号 flat=false", not sig.best_estimate().get("flat", false))
 	var p := Advice.diagnose({"accuracy": 0.6, "median_hit": 0.7, "median_eff": 0.6, "micro_adjusts": 5, "track_accuracy": -1.0, "switch_secs": -1.0}, [{}])
 	_check("成功率 60% 触发命中率诊断", p.any(func(x): return x["tag"] == "slow_aim"))
+	# 轮间稳定性阈值（0.22，仿真校准）：稳定玩家不触发，真起伏触发
+	var stable_rounds: Array = []
+	var unstable_rounds: Array = []
+	for i in 8:
+		stable_rounds.append({"targets_done": 12, "hits": 11, "misses": 1, "hit_times": [0.4, 0.5, 0.45, 0.6, 0.55, 0.4, 0.5, 0.65, 0.45, 0.6, 0.55, 0.5], "expired_angles": [], "sens": 0.35})
+		unstable_rounds.append({"targets_done": 12, "hits": 11 if i % 2 == 0 else 0, "misses": 1 if i % 2 == 0 else 12, "hit_times": [0.4, 0.5, 0.45, 0.6, 0.55, 0.4, 0.5, 0.65, 0.45, 0.6, 0.55, 0.5] if i % 2 == 0 else [], "expired_angles": [], "sens": 0.35})
+	var p_s := Advice.diagnose({"accuracy": 0.9, "median_hit": 0.5, "median_eff": 0.5, "micro_adjusts": 0, "track_accuracy": -1.0, "switch_secs": -1.0}, stable_rounds)
+	var p_u := Advice.diagnose({"accuracy": 0.9, "median_hit": 0.5, "median_eff": 0.5, "micro_adjusts": 0, "track_accuracy": -1.0, "switch_secs": -1.0}, unstable_rounds)
+	_check("稳定玩家不触发轮间波动诊断", not p_s.any(func(x): return x["tag"] == "unstable"))
+	_check("真实起伏（0分轮交替）触发轮间波动诊断", p_u.any(func(x): return x["tag"] == "unstable"))

@@ -435,6 +435,22 @@ func _test_flat_detection() -> void:
 	for x in [0.2, 0.35, 0.5, 0.65]:
 		sig.add_result(_make_round(x, 5 + int(round((x - 0.1) * 40))))
 	_check("有信号 flat=false", not sig.best_estimate().get("flat", false))
+	# 平坦判定 2：实测范围 ≥0.08 但 GP 曲线平坦（真实用户 10 轮数据复现）→ flat 且推荐实测最高
+	var user_like := TestPlan.new()
+	user_like.begin(false, 0.1, 0.9, 10)
+	var ux := [0.30, 0.33, 0.38, 0.41, 0.46, 0.49, 0.54, 0.57, 0.62, 0.70]
+	var uy := [0.439, 0.363, 0.426, 0.448, 0.408, 0.451, 0.385, 0.448, 0.367, 0.319]
+	for i in 10:
+		var r := _make_round(ux[i], 12)
+		var t: float = (1.0 / uy[i] - 1.0) * 0.3 / ux[i]
+		var times: Array = []
+		for j in 12:
+			times.append(t)
+		r["hit_times"] = times
+		user_like.add_result(r)
+	var est2 := user_like.best_estimate()
+	_check("实测范围≥0.08但GP平坦 → flat=true", est2.get("flat", false), "sens=%f flat=%s" % [est2["sens"], est2["flat"]])
+	_check("平坦时推荐实测最高点 0.49", absf(float(est2["sens"]) - 0.49) < 0.005, "sens=%f" % est2["sens"])
 	var p := Advice.diagnose({"accuracy": 0.6, "median_hit": 0.7, "median_eff": 0.6, "micro_adjusts": 5, "track_accuracy": -1.0, "switch_secs": -1.0}, [{}])
 	_check("成功率 60% 触发命中率诊断", p.any(func(x): return x["tag"] == "slow_aim"))
 	# 轮间稳定性阈值（0.22，仿真校准）：稳定玩家不触发，真起伏触发

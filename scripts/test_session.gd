@@ -113,7 +113,7 @@ func apply_ui_scale() -> void:
 	# UI 缩放：100%/自动 = 项目基尺寸 1280×720；125% = 1024×576（内容放大 1.25）
 	var base_w := BASE_UI_WIDTH
 	var base_h := BASE_UI_HEIGHT
-	if ui_scale > 0.0 and ui_scale < 1.0:
+	if ui_scale > 0.0 and absf(ui_scale - 1.0) > 0.001:
 		base_w = roundi(BASE_UI_WIDTH / ui_scale)
 		base_h = roundi(BASE_UI_HEIGHT / ui_scale)
 	win.content_scale_size = Vector2i(base_w, base_h)

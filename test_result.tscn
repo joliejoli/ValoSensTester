@@ -148,6 +148,7 @@ text = "本次测试表现（全轮聚合）"
 horizontal_alignment = 1
 
 [node name="Metrics" type="GridContainer" parent="Scroll/Center/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 24
 theme_override_constants/v_separation = 10
@@ -386,6 +387,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="ReportPopup/Center"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(860, 620)
 layout_mode = 2
 

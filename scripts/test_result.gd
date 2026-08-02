@@ -38,6 +38,10 @@ var _share_problems: Array = []
 var _share_advice: Array = []
 
 func _ready() -> void:
+	# 响应式布局：窄窗口 Metrics 降为 2 列、弹窗尺寸不超过视口 92%/85%（防出界）
+	var vp := get_viewport_rect().size
+	%Metrics.columns = 2 if vp.x < 1180.0 else 3
+	%Card.custom_minimum_size = Vector2(minf(860.0, vp.x * 0.92), minf(620.0, vp.y * 0.85))
 	# 悬停圆形说明按钮：显示评分与图表说明面板
 	help_button.mouse_entered.connect(func() -> void: help_panel.visible = true)
 	help_button.mouse_exited.connect(func() -> void: help_panel.visible = false)

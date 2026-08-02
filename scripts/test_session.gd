@@ -53,19 +53,7 @@ var _settings: Dictionary = {}
 
 func _ready() -> void:
 	load_settings()
-	_apply_native_icon()
 	get_tree().root.size_changed.connect(_on_window_size_changed)
-
-# 任务栏与窗口左上角图标：运行时显式设置（Windows 下 exe 图标不自动同步到
-# 任务栏/窗口标题栏图标，需 DisplayServer.set_icon + Window.icon 手动应用）
-func _apply_native_icon() -> void:
-	if DisplayServer.get_name() != "windows":
-		return
-	var img := Image.load_from_file("res://icon.png")
-	if img == null:
-		return
-	DisplayServer.set_icon(img)
-	get_window().icon = ImageTexture.create_from_image(img)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F11:

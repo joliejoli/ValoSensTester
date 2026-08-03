@@ -32,6 +32,15 @@ func _ready() -> void:
 	var vp := get_viewport_rect().size
 	%TrendCard.custom_minimum_size = Vector2(minf(760.0, vp.x * 0.92), minf(560.0, vp.y * 0.85))
 	%DetailCard.custom_minimum_size = Vector2(minf(900.0, vp.x * 0.92), 0)
+	# 防御：Toolbar 与 TopBar 同为 anchors_preset=10（顶部拉伸），多屏 DPI 环境
+	# 下锚点可能未被应用导致整体塌缩不可见（用户 4K 双屏截图工具栏整体消失），
+	# 直接赋值锚点强制顶部拉伸，保留既有 offsets（100~152）
+	var tb := get_node_or_null("Toolbar")
+	if tb is Control:
+		tb.anchor_left = 0.0
+		tb.anchor_top = 0.0
+		tb.anchor_right = 1.0
+		tb.anchor_bottom = 0.0
 	_records = HistoryStore.load_records()
 	_rebuild()
 

@@ -63,6 +63,14 @@ var _long_positions: Array[int] = []
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	camera.fov = _vertical_fov(TestConfig.get_fov())
+	# 防御：TopHUD 为 anchors_preset=10（顶部拉伸），多屏 DPI 环境下锚点可能
+	# 未被应用导致塌缩（与 TopBar/Toolbar 同机制），直接赋值锚点保留 offsets
+	var hud := get_node_or_null("UI/TopHUD")
+	if hud is Control:
+		hud.anchor_left = 0.0
+		hud.anchor_top = 0.0
+		hud.anchor_right = 1.0
+		hud.anchor_bottom = 0.0
 	# YXZ 顺序：先绕世界 Y 偏航，再绕局部 X 俯仰（FPS 标准）
 	# YXZ 顺序（先绕世界 Y 偏航，再绕局部 X 俯仰，FPS 标准；枚举值 2 = YXZ）
 	camera.rotation_order = 2
